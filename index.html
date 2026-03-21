@@ -52,6 +52,37 @@
         </div>
     </div>
 
+    <!-- Invitee Detail Modal -->
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal detail-modal">
+            <div class="detail-header">
+                <div class="detail-photo-wrapper">
+                    <img class="detail-photo" id="detail-photo" src="" alt="">
+                    <div class="detail-photo-placeholder" id="detail-photo-placeholder">No Photo</div>
+                </div>
+                <div class="detail-info">
+                    <div class="detail-name" id="detail-name"></div>
+                    <div class="detail-title" id="detail-title"></div>
+                </div>
+                <button class="btn-icon detail-close" onclick="App.closeDetailModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="detail-fields">
+                <label>Headshot URL</label>
+                <div class="detail-url-row">
+                    <input class="editable-text detail-input" id="detail-headshot-url" placeholder="https://..." oninput="App.previewHeadshot(this.value)">
+                </div>
+                <label>Bio</label>
+                <textarea class="brief-textarea detail-bio" id="detail-bio" placeholder="3-5 sentence bio..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="App.closeDetailModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="App.saveDetail()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notifications -->
     <div class="toast-container" id="toast-container"></div>
 

@@ -307,6 +307,9 @@ const App = {
                     <button class="btn btn-sm columns-toggle-btn" onclick="App.exportCSV()">
                         ${this.icons.download} Export
                     </button>
+                    <button class="btn btn-sm columns-toggle-btn" onclick="App.printFacebook()">
+                        ${this.icons.users} Facebook
+                    </button>
                     <div class="columns-toggle-wrapper">
                         <button class="btn btn-sm columns-toggle-btn" onclick="App.toggleColumnsMenu()">
                             ${this.icons.columns} Columns
@@ -479,8 +482,15 @@ const App = {
 
     renderInviteeRow(inv) {
         const visible = this.getVisibleFields();
+        const hasPhoto = inv.headshotUrl && inv.headshotUrl.trim();
+        const photoIndicator = hasPhoto
+            ? `<img class="row-avatar" src="${this.escapeAttr(inv.headshotUrl)}" alt="">`
+            : `<span class="row-avatar-empty" title="No headshot"></span>`;
         const cells = visible.map(field => {
             const extraClass = field === 'notes' ? ' class="notes-cell"' : '';
+            if (field === 'name') {
+                return `<td data-field="name" data-original="${this.escapeAttr(inv.name)}" title="${this.escapeAttr(inv.name || '')}" onclick="App.editCell(this)"><span class="name-with-avatar">${photoIndicator}${this.cellDisplay(inv.name, 'name')}</span></td>`;
+            }
             if (field === 'status') {
                 return `<td data-field="status" data-original="${this.escapeAttr(inv.status)}" title="${this.escapeAttr(this.formatStatus(inv.status))}" onclick="App.editCell(this)">
                     <span class="status-badge status-${inv.status}">${this.formatStatus(inv.status)}</span>
@@ -493,6 +503,9 @@ const App = {
                 ${cells}
                 <td>
                     <div class="row-actions">
+                        <button class="btn-icon" title="Profile & Headshot" onclick="App.openDetailModal('${inv.id}')">
+                            ${this.icons.users}
+                        </button>
                         <button class="btn-icon" title="Delete" onclick="App.showDeleteModal('${inv.id}', '${this.escapeAttr(inv.name)}')">
                             ${this.icons.trash}
                         </button>
@@ -925,6 +938,250 @@ const App = {
     toggleColumnsMenu() {
         const menu = document.getElementById('columns-menu');
         if (menu) menu.classList.toggle('active');
+    },
+
+    // ── Detail Modal (Headshot + Bio) ────────────────
+    detailInviteeId: null,
+
+    openDetailModal(id) {
+        const inv = this.invitees.find(i => i.id === id);
+        if (!inv) return;
+        this.detailInviteeId = id;
+
+        document.getElementById('detail-name').textContent = inv.name || '';
+        document.getElementById('detail-title').textContent = [inv.title, inv.organization].filter(Boolean).join(' · ');
+        document.getElementById('detail-headshot-url').value = inv.headshotUrl || '';
+        document.getElementById('detail-bio').value = inv.bio || '';
+        this.previewHeadshot(inv.headshotUrl || '');
+
+        document.getElementById('detail-modal').classList.add('active');
+    },
+
+    closeDetailModal() {
+        document.getElementById('detail-modal').classList.remove('active');
+        this.detailInviteeId = null;
+    },
+
+    previewHeadshot(url) {
+        const img = document.getElementById('detail-photo');
+        const placeholder = document.getElementById('detail-photo-placeholder');
+        if (url && url.trim()) {
+            img.src = url;
+            img.style.display = 'block';
+            placeholder.style.display = 'none';
+            img.onerror = () => {
+                img.style.display = 'none';
+                placeholder.style.display = 'flex';
+            };
+        } else {
+            img.style.display = 'none';
+            placeholder.style.display = 'flex';
+        }
+    },
+
+    saveDetail() {
+        if (!this.detailInviteeId) return;
+        const headshotUrl = document.getElementById('detail-headshot-url').value.trim();
+        const bio = document.getElementById('detail-bio').value.trim();
+        Data.updateInvitee(this.detailInviteeId, { headshotUrl, bio })
+            .then(() => {
+                this.showToast('Profile saved');
+                this.closeDetailModal();
+            })
+            .catch(() => this.showToast('Error saving', 'error'));
+    },
+
+    // ── Print Facebook ──────────────────────────────
+    printFacebook() {
+        const filtered = this.getFilteredInvitees().filter(inv =>
+            inv.status === 'invited' || inv.status === 'confirmed'
+        );
+
+        if (filtered.length === 0) {
+            this.showToast('No invited or confirmed invitees to print', 'error');
+            return;
+        }
+
+        const event = this.events.find(e => e.id === this.activeEventId);
+        const eventName = event ? event.name : 'Event';
+        const sorted = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        const cards = sorted.map(inv => {
+            const photoHtml = inv.headshotUrl
+                ? `<img class="fb-photo" src="${this.escapeAttr(inv.headshotUrl)}" alt="${this.escapeAttr(inv.name)}">`
+                : `<div class="fb-photo-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`;
+            return `
+                <div class="fb-card">
+                    ${photoHtml}
+                    <div class="fb-details">
+                        <div class="fb-name">${this.escapeHtml(inv.name)}</div>
+                        <div class="fb-title">${this.escapeHtml(inv.title || '')}</div>
+                        <div class="fb-org">${this.escapeHtml(inv.organization || '')}</div>
+                        ${inv.bio ? `<div class="fb-bio">${this.escapeHtml(inv.bio)}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Group into pairs for 2-per-page layout
+        const pages = [];
+        for (let i = 0; i < cards.length; i += 2) {
+            // We'll handle pairing in CSS with page breaks
+        }
+
+        const html = `<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>${this.escapeHtml(eventName)} — Guest Directory</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @page { size: letter; margin: 0; }
+    body {
+        font-family: 'Outfit', sans-serif;
+        background: #fff;
+        color: #1c1917;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .fb-cover {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        page-break-after: always;
+        background: linear-gradient(160deg, #fafaf9 0%, #f0ece6 100%);
+        border-bottom: 4px solid #b45309;
+    }
+    .fb-cover h1 {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 48px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #1c1917;
+        margin-bottom: 8px;
+    }
+    .fb-cover .fb-cover-sub {
+        font-size: 16px;
+        color: #78716c;
+        font-weight: 400;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .fb-cover .fb-cover-count {
+        margin-top: 24px;
+        font-size: 14px;
+        color: #a8a29e;
+    }
+    .fb-cover .fb-cover-line {
+        width: 60px;
+        height: 2px;
+        background: #b45309;
+        margin: 20px auto;
+    }
+
+    .fb-page {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0;
+        padding: 40px 60px;
+        page-break-after: always;
+    }
+    .fb-page:last-child { page-break-after: auto; }
+
+    .fb-card {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 40px;
+        padding: 30px 0;
+    }
+    .fb-card + .fb-card {
+        border-top: 1px solid #e7e5e4;
+    }
+
+    .fb-photo {
+        width: 220px;
+        height: 260px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: #f5f5f4;
+        border: 1px solid #e7e5e4;
+        box-shadow: 0 4px 20px rgba(28, 25, 23, 0.08);
+    }
+    .fb-photo-placeholder {
+        width: 220px;
+        height: 260px;
+        border-radius: 8px;
+        background: #f5f5f4;
+        border: 1px dashed #d6d3d1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: #a8a29e;
+    }
+    .fb-photo-placeholder svg { width: 48px; height: 48px; }
+    .fb-details { flex: 1; min-width: 0; }
+    .fb-name {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #1c1917;
+        margin-bottom: 4px;
+        line-height: 1.15;
+    }
+    .fb-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #b45309;
+        margin-bottom: 2px;
+    }
+    .fb-org {
+        font-size: 13px;
+        color: #78716c;
+        margin-bottom: 12px;
+    }
+    .fb-bio {
+        font-size: 13px;
+        line-height: 1.6;
+        color: #44403c;
+    }
+</style>
+</head><body>
+    <div class="fb-cover">
+        <div class="fb-cover-line"></div>
+        <h1>${this.escapeHtml(eventName)}</h1>
+        <div class="fb-cover-sub">Guest Directory</div>
+        <div class="fb-cover-count">${sorted.length} Guest${sorted.length !== 1 ? 's' : ''}</div>
+    </div>
+    ${(() => {
+        let pagesHtml = '';
+        for (let i = 0; i < sorted.length; i += 2) {
+            const pair = [sorted[i], sorted[i + 1]].filter(Boolean);
+            const pairCards = pair.map(inv => {
+                const ph = inv.headshotUrl
+                    ? '<img class="fb-photo" src="' + this.escapeAttr(inv.headshotUrl) + '" alt="' + this.escapeAttr(inv.name) + '">'
+                    : '<div class="fb-photo-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
+                return '<div class="fb-card">' + ph + '<div class="fb-details"><div class="fb-name">' + this.escapeHtml(inv.name) + '</div><div class="fb-title">' + this.escapeHtml(inv.title || '') + '</div><div class="fb-org">' + this.escapeHtml(inv.organization || '') + '</div>' + (inv.bio ? '<div class="fb-bio">' + this.escapeHtml(inv.bio) + '</div>' : '') + '</div></div>';
+            }).join('');
+            pagesHtml += '<div class="fb-page">' + pairCards + '</div>';
+        }
+        return pagesHtml;
+    })()}
+</body></html>`;
+
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+        win.onload = () => win.print();
     },
 
     exportCSV() {
