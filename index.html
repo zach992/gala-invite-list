@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Invite Lists</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="app-title">Invite Lists</div>
+    </header>
+
+    <!-- Event Tabs -->
+    <div class="tabs-container" id="tabs-container"></div>
+
+    <!-- Main Content (populated by JS) -->
+    <main id="app">
+        <div class="loading">Loading...</div>
+    </main>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal">
+            <div class="modal-title">Delete Invitee</div>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+                Are you sure you want to remove <strong id="delete-name"></strong> from this event's invite list?
+            </p>
+            <div class="modal-actions">
+                <button class="btn" onclick="App.closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Event Modal -->
+    <div class="modal-overlay" id="delete-event-modal">
+        <div class="modal">
+            <div class="modal-title">Delete Event</div>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+                Are you sure you want to delete <strong id="delete-event-name"></strong> and all its invitees?
+            </p>
+            <div class="modal-actions">
+                <button class="btn" onclick="App.closeDeleteEventModal()">Cancel</button>
+                <button class="btn btn-danger" id="confirm-delete-event-btn">Delete Event</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
