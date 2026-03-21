@@ -499,7 +499,7 @@ const App = {
         const hasPhoto = inv.headshotUrl && inv.headshotUrl.trim();
         const photoIndicator = hasPhoto
             ? `<img class="row-avatar" src="${this.escapeAttr(inv.headshotUrl)}" alt="">`
-            : `<span class="row-avatar-empty" title="No headshot"></span>`;
+            : '';
         const cells = visible.map(field => {
             const extraClass = field === 'notes' ? ' class="notes-cell"' : '';
             if (field === 'name') {

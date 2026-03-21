@@ -733,13 +733,11 @@ body {
     animation: row-flash 1.5s ease-out;
 }
 
-.invite-table tbody tr[data-status] td:first-child {
-    border-left: 3px solid transparent;
-}
-.invite-table tbody tr[data-status="pending"] td:first-child { border-left-color: var(--status-pending-bg); }
-.invite-table tbody tr[data-status="invited"] td:first-child { border-left-color: var(--status-invited-bg); }
-.invite-table tbody tr[data-status="confirmed"] td:first-child { border-left-color: var(--status-confirmed-bg); }
-.invite-table tbody tr[data-status="declined"] td:first-child { border-left-color: var(--status-declined-bg); }
+/* ── Row status tinting (full row) ─────────────── */
+.invite-table tbody tr[data-status="pending"] td { background-color: rgba(232, 230, 227, 0.3); }
+.invite-table tbody tr[data-status="invited"] td { background-color: rgba(252, 232, 178, 0.3); }
+.invite-table tbody tr[data-status="confirmed"] td { background-color: rgba(200, 230, 160, 0.3); }
+.invite-table tbody tr[data-status="declined"] td { background-color: rgba(242, 184, 190, 0.3); }
 
 /* ── Click-to-Edit Cells ─────────────────────────── */
 .invite-table tbody tr:not(.phantom-row) td[data-field] {
