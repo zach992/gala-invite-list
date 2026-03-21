@@ -2,38 +2,50 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --bg: #f7f7f8;
-    --surface: #ffffff;
-    --border: #e2e2e6;
-    --border-light: #f0f0f2;
-    --text: #1a1a2e;
-    --text-secondary: #6b6b80;
-    --text-muted: #9b9bae;
-    --accent: #4f46e5;
-    --accent-hover: #4338ca;
-    --accent-light: #eef2ff;
-    --danger: #dc2626;
+    /* Warm stone palette */
+    --bg: #f5f5f4;
+    --surface: #fafaf9;
+    --border: #e7e5e4;
+    --border-light: #f5f5f4;
+    --text: #1c1917;
+    --text-secondary: #78716c;
+    --text-muted: #a8a29e;
+    --accent: #b45309;
+    --accent-hover: #92400e;
+    --accent-light: #fffbeb;
+    --danger: #b91c1c;
     --danger-light: #fef2f2;
-    --radius: 10px;
-    --radius-sm: 6px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-    --transition: 150ms ease;
 
-    /* Status colors */
-    --status-pending-bg: #f3f4f6;
-    --status-pending-text: #6b7280;
-    --status-invited-bg: #dbeafe;
-    --status-invited-text: #1d4ed8;
-    --status-confirmed-bg: #dcfce7;
-    --status-confirmed-text: #15803d;
-    --status-declined-bg: #fee2e2;
-    --status-declined-text: #dc2626;
+    /* Typography */
+    --font-display: 'Cormorant Garamond', Georgia, serif;
+    --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* Design tokens */
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(28, 25, 23, 0.04), 0 1px 2px rgba(28, 25, 23, 0.03);
+    --shadow-md: 0 4px 16px rgba(28, 25, 23, 0.06), 0 2px 4px rgba(28, 25, 23, 0.04);
+    --transition: 200ms ease-out;
+
+    /* Status colors — refined */
+    --status-pending-bg: #e8e6e3;
+    --status-pending-text: #6b6560;
+    --status-pending-border: rgba(107, 101, 96, 0.25);
+    --status-invited-bg: #fce8b2;
+    --status-invited-text: #8a5a1e;
+    --status-invited-border: rgba(138, 90, 30, 0.25);
+    --status-confirmed-bg: #c8e6a0;
+    --status-confirmed-text: #3d6b1e;
+    --status-confirmed-border: rgba(61, 107, 30, 0.25);
+    --status-declined-bg: #f2b8be;
+    --status-declined-text: #993344;
+    --status-declined-border: rgba(153, 51, 68, 0.25);
 }
 
 body {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--font-body);
     background: var(--bg);
+    background-image: radial-gradient(ellipse at top, #fafaf9 0%, var(--bg) 70%);
     color: var(--text);
     line-height: 1.5;
     min-height: 100vh;
@@ -42,7 +54,7 @@ body {
 /* ── Header ──────────────────────────────────────── */
 .app-header {
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 0 var(--border);
     padding: 16px 24px;
     display: flex;
     align-items: center;
@@ -53,9 +65,10 @@ body {
 }
 
 .app-title {
-    font-size: 18px;
+    font-family: var(--font-display);
+    font-size: 20px;
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
 }
 
 .header-actions {
@@ -114,34 +127,35 @@ body {
 .btn-icon:hover { background: var(--bg); color: var(--text); }
 .btn-icon svg { width: 16px; height: 16px; }
 
-/* ── Tabs ────────────────────────────────────────── */
+/* ── Tabs (pill style) ──────────────────────────── */
 .tabs-container {
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
+    box-shadow: 0 1px 0 var(--border);
+    padding: 8px 24px;
     display: flex;
     align-items: center;
-    gap: 0;
+    gap: 4px;
     overflow-x: auto;
 }
 
 .tab {
-    padding: 12px 20px;
-    font-size: 14px;
+    padding: 8px 16px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
     border: none;
     background: none;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
+    border-radius: var(--radius-sm);
     transition: all var(--transition);
     white-space: nowrap;
     font-family: inherit;
 }
-.tab:hover { color: var(--text); }
+.tab:hover { background: var(--bg); color: var(--text); }
 .tab.active {
+    background: var(--accent-light);
     color: var(--accent);
-    border-bottom-color: var(--accent);
+    font-weight: 600;
 }
 
 .tab-add {
@@ -207,7 +221,8 @@ body {
 }
 
 .event-name-input {
-    font-size: 22px;
+    font-family: var(--font-display);
+    font-size: 26px;
     font-weight: 600;
     letter-spacing: -0.02em;
     width: 100%;
@@ -234,31 +249,63 @@ body {
 /* ── Stats Bar ───────────────────────────────────── */
 .stats-bar {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     padding: 16px 24px;
     max-width: 1200px;
     margin: 0 auto;
+    align-items: center;
+}
+
+.stat-total {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin-right: 6px;
+    white-space: nowrap;
 }
 
 .stat-chip {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
     font-weight: 500;
+    border: 1px solid;
 }
 
 .stat-chip .stat-count {
     font-weight: 700;
-    font-size: 14px;
+    font-size: 13px;
 }
 
-.stat-pending { background: var(--status-pending-bg); color: var(--status-pending-text); }
-.stat-invited { background: var(--status-invited-bg); color: var(--status-invited-text); }
-.stat-confirmed { background: var(--status-confirmed-bg); color: var(--status-confirmed-text); }
-.stat-declined { background: var(--status-declined-bg); color: var(--status-declined-text); }
+.stat-pending { background: var(--status-pending-bg); color: var(--status-pending-text); border-color: var(--status-pending-border); }
+.stat-invited { background: var(--status-invited-bg); color: var(--status-invited-text); border-color: var(--status-invited-border); }
+.stat-confirmed { background: var(--status-confirmed-bg); color: var(--status-confirmed-text); border-color: var(--status-confirmed-border); }
+.stat-declined { background: var(--status-declined-bg); color: var(--status-declined-text); border-color: var(--status-declined-border); }
+
+.status-bar-container {
+    flex: 1;
+    max-width: 200px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-left: 4px;
+    display: flex;
+}
+
+.status-bar-segment {
+    height: 100%;
+    transition: width 400ms ease-out;
+}
+
+.status-bar-segment.seg-confirmed { background: var(--status-confirmed-bg); }
+.status-bar-segment.seg-invited { background: var(--status-invited-bg); }
+.status-bar-segment.seg-declined { background: var(--status-declined-bg); }
+.status-bar-segment.seg-pending { background: var(--status-pending-bg); }
 
 /* ── Toolbar ─────────────────────────────────────── */
 .toolbar {
@@ -365,11 +412,13 @@ body {
 }
 
 .brief-field label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-muted);
     white-space: nowrap;
     min-width: 80px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .brief-field .editable-text {
@@ -395,10 +444,12 @@ body {
 
 .brief-talking-points label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-muted);
     margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .brief-textarea {
@@ -461,7 +512,7 @@ body {
 .invite-table th:hover { color: var(--text-secondary); }
 
 .invite-table td {
-    padding: 10px 14px;
+    padding: 13px 14px;
     font-size: 14px;
     border-bottom: 1px solid var(--border-light);
     vertical-align: middle;
@@ -471,7 +522,7 @@ body {
 
 .invite-table tr:last-child td { border-bottom: none; }
 
-.invite-table tr:hover td { background: #fafafe; }
+.invite-table tr:hover td { background: var(--accent-light); }
 
 /* ── Click-to-Edit Cells ─────────────────────────── */
 .invite-table tbody tr:not(.phantom-row) td[data-field] {
@@ -479,19 +530,19 @@ body {
 }
 
 .invite-table tbody td[data-field]:hover {
-    background-color: rgba(79, 70, 229, 0.08);
-    box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.1);
+    background-color: rgba(180, 83, 9, 0.06);
+    box-shadow: inset 0 0 0 1px rgba(180, 83, 9, 0.1);
 }
 
 tr.editing {
-    background-color: rgba(238, 242, 255, 0.9) !important;
+    background-color: var(--accent-light) !important;
     outline: 2px solid var(--accent);
     outline-offset: -1px;
 }
 
 /* No padding change in edit mode — prevents size jump */
 tr.editing td {
-    padding: 10px 14px;
+    padding: 13px 14px;
 }
 
 /* Borderless, transparent inline input — fills cell seamlessly */
@@ -509,7 +560,7 @@ tr.editing td {
 
 .inline-edit-input:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25);
+    box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.2);
     border-radius: 3px;
 }
 
@@ -520,20 +571,32 @@ tr.editing td {
     user-select: none;
 }
 
-/* ── Status Badge ────────────────────────────────── */
+/* ── Status Badge (outlined + dot) ──────────────── */
 .status-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 4px 10px;
-    border-radius: 20px;
+    border-radius: var(--radius-sm);
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
     text-transform: capitalize;
+    border: 1px solid;
 }
 
-.status-pending { background: var(--status-pending-bg); color: var(--status-pending-text); }
-.status-invited { background: var(--status-invited-bg); color: var(--status-invited-text); }
-.status-confirmed { background: var(--status-confirmed-bg); color: var(--status-confirmed-text); }
-.status-declined { background: var(--status-declined-bg); color: var(--status-declined-text); }
+.status-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+.status-pending { background: var(--status-pending-bg); color: var(--status-pending-text); border-color: var(--status-pending-border); }
+.status-invited { background: var(--status-invited-bg); color: var(--status-invited-text); border-color: var(--status-invited-border); }
+.status-confirmed { background: var(--status-confirmed-bg); color: var(--status-confirmed-text); border-color: var(--status-confirmed-border); }
+.status-declined { background: var(--status-declined-bg); color: var(--status-declined-text); border-color: var(--status-declined-border); }
 
 /* ── Status Select (native dropdown) ──────────── */
 .status-select {
@@ -550,12 +613,13 @@ tr.editing td {
 
 /* ── Phantom Row ────────────────────────────────── */
 .phantom-row {
-    opacity: 0.5;
+    opacity: 0.45;
     transition: opacity 0.2s ease;
 }
 .phantom-row:hover,
 .phantom-row:focus-within {
     opacity: 1;
+    background: var(--accent-light);
 }
 .phantom-row.editing {
     opacity: 1;
@@ -568,7 +632,6 @@ tr.editing td {
 
 .phantom-placeholder {
     color: var(--text-muted);
-    font-style: italic;
     font-size: 13px;
     user-select: none;
 }
@@ -580,24 +643,35 @@ tr.editing td {
     white-space: nowrap;
 }
 
-/* ── Keyboard Hints ──────────────────────────────── */
+.invite-table td[data-field="status"] {
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* ── Keyboard Hints (table footer bar) ──────────── */
 .keyboard-hints {
     display: flex;
     justify-content: center;
     gap: 16px;
-    padding: 10px;
+    padding: 10px 16px;
     font-size: 12px;
     color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    margin-top: -1px;
 }
 
 .keyboard-hints kbd {
     display: inline-block;
-    padding: 1px 5px;
-    font-size: 11px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 500;
     font-family: inherit;
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: 4px;
     margin-right: 2px;
 }
 
@@ -614,6 +688,9 @@ tr.editing td {
 }
 
 .toast {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     padding: 10px 18px;
     border-radius: var(--radius-sm);
     font-size: 13px;
@@ -621,14 +698,18 @@ tr.editing td {
     background: var(--text);
     color: white;
     opacity: 0;
-    transform: translateY(8px);
-    transition: all 200ms ease;
+    transform: translateX(12px);
+    transition: all 200ms ease-out;
     pointer-events: auto;
 }
 
 .toast.visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
+}
+
+.toast svg {
+    flex-shrink: 0;
 }
 
 .toast-error {
@@ -662,14 +743,16 @@ tr.editing td {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(28, 25, 23, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    transition: all 200ms ease;
+    transition: all 200ms ease-out;
 }
 .modal-overlay.active { opacity: 1; visibility: visible; }
 
@@ -680,13 +763,14 @@ tr.editing td {
     width: 90%;
     max-width: 500px;
     padding: 24px;
-    transform: translateY(10px);
-    transition: transform 200ms ease;
+    transform: translateY(10px) scale(0.98);
+    transition: transform 200ms ease-out;
 }
-.modal-overlay.active .modal { transform: translateY(0); }
+.modal-overlay.active .modal { transform: translateY(0) scale(1); }
 
 .modal-title {
-    font-size: 18px;
+    font-family: var(--font-display);
+    font-size: 20px;
     font-weight: 600;
     margin-bottom: 20px;
 }
@@ -759,7 +843,7 @@ tr.editing td {
 /* ── Responsive ──────────────────────────────────── */
 @media (max-width: 768px) {
     .app-header { padding: 12px 16px; }
-    .tabs-container { padding: 0 16px; }
+    .tabs-container { padding: 4px 16px; }
     .event-header, .stats-bar, .toolbar, .table-container { padding-left: 16px; padding-right: 16px; }
     .stats-bar { flex-wrap: wrap; gap: 8px; }
     .toolbar { flex-wrap: wrap; }
@@ -777,4 +861,6 @@ tr.editing td {
 
     .invite-table { min-width: 700px; }
     .row-actions { opacity: 1; }
+
+    .status-bar-container { display: none; }
 }

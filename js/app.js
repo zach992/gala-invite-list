@@ -279,13 +279,22 @@ const App = {
         this.invitees.forEach(inv => {
             if (counts[inv.status] !== undefined) counts[inv.status]++;
         });
+        const total = this.invitees.length;
+        const pct = (n) => total > 0 ? ((n / total) * 100).toFixed(1) : 0;
         const bar = document.getElementById('stats-bar');
         if (!bar) return;
         bar.innerHTML = `
+            <div class="stat-total">${total} Invitee${total !== 1 ? 's' : ''}</div>
             <div class="stat-chip stat-pending"><span class="stat-count">${counts.pending}</span> Pending</div>
             <div class="stat-chip stat-invited"><span class="stat-count">${counts.invited}</span> Invited</div>
             <div class="stat-chip stat-confirmed"><span class="stat-count">${counts.confirmed}</span> Confirmed</div>
             <div class="stat-chip stat-declined"><span class="stat-count">${counts.declined}</span> Declined</div>
+            <div class="status-bar-container" title="${pct(counts.confirmed)}% confirmed, ${pct(counts.invited)}% invited, ${pct(counts.declined)}% declined, ${pct(counts.pending)}% pending">
+                <div class="status-bar-segment seg-confirmed" style="width: ${pct(counts.confirmed)}%"></div>
+                <div class="status-bar-segment seg-invited" style="width: ${pct(counts.invited)}%"></div>
+                <div class="status-bar-segment seg-declined" style="width: ${pct(counts.declined)}%"></div>
+                <div class="status-bar-segment seg-pending" style="width: ${pct(counts.pending)}%"></div>
+            </div>
         `;
     },
 
@@ -325,9 +334,9 @@ const App = {
                 <colgroup>
                     <col style="width:16%">
                     <col style="width:12%">
-                    <col style="width:14%">
-                    <col style="width:10%">
+                    <col style="width:13%">
                     <col style="width:12%">
+                    <col style="width:11%">
                     <col style="width:16%">
                     <col style="width:16%">
                     <col style="width:4%">
@@ -812,9 +821,13 @@ const App = {
         const container = document.getElementById('toast-container');
         if (!container) return;
 
+        const icon = type === 'error'
+            ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
+            : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        toast.textContent = message;
+        toast.innerHTML = icon + '<span>' + this.escapeHtml(message) + '</span>';
         container.appendChild(toast);
 
         requestAnimationFrame(() => toast.classList.add('visible'));
