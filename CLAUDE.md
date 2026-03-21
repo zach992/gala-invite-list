@@ -22,7 +22,12 @@ Vanilla JS, HTML, CSS — Firebase Firestore (real-time sync), no build step
 - Column visibility is session-only (resets on refresh), controlled by `App.hiddenColumns`
 - Default sort: status (ascending)
 
+## Deployment
+- GitHub Pages auto-deploys from `main` branch
+- Live URL: https://zach992.github.io/gala-invite-list/
+
 ## Conventions
 - Validate elected official names/titles against official government sources before adding
 - Include `invitedBy` for every invitee to track which lobbyist owns the relationship
 - Notes should only contain non-obvious context — don't duplicate what's in other columns
+- After making visual/UI changes, use Playwright MCP to navigate to the live site and take a screenshot to verify the result
