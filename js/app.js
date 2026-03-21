@@ -1,9 +1,9 @@
 // ── Constants ────────────────────────────────────────
-const FIELD_ORDER = ['name', 'title', 'organization', 'status', 'phone', 'email', 'notes'];
+const FIELD_ORDER = ['name', 'title', 'organization', 'status', 'seats', 'invitedBy', 'phone', 'email', 'notes'];
 const STATUS_ORDER = { pending: 0, invited: 1, confirmed: 2, declined: 3 };
 const HEADER_LABELS = {
     name: 'Name', title: 'Title', organization: 'Organization',
-    status: 'Status', phone: 'Phone', email: 'Email', notes: 'Notes'
+    status: 'Status', seats: 'Seats', invitedBy: 'Invited By', phone: 'Phone', email: 'Email', notes: 'Notes'
 };
 
 // ── App State ────────────────────────────────────────
@@ -13,8 +13,9 @@ const App = {
     activeEventId: null,
     inviteeListener: null,
     searchQuery: '',
-    sortField: 'name',
+    sortField: 'status',
     sortDirection: 'asc',
+    hiddenColumns: {},
     briefExpanded: false,
     deleteTargetId: null,
     editingRowId: null,
@@ -30,6 +31,7 @@ const App = {
         mapPin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
         users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
         fileText: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+        columns: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>',
     },
 
     // ── Init ────────────────────────────────────────
@@ -90,6 +92,14 @@ const App = {
             });
         });
 
+        // Click outside columns menu to close
+        document.addEventListener('click', e => {
+            const menu = document.getElementById('columns-menu');
+            if (menu && menu.classList.contains('active') && !e.target.closest('.columns-toggle-wrapper')) {
+                menu.classList.remove('active');
+            }
+        });
+
     },
 
     // ── Tab Rendering ───────────────────────────────
@@ -108,6 +118,9 @@ const App = {
     selectEvent(eventId) {
         this.activeEventId = eventId;
         this.searchQuery = '';
+        this.sortField = 'status';
+        this.sortDirection = 'asc';
+        this.hiddenColumns = {};
         this.editingRowId = null;
         this.pendingNewRow = {};
         this.renderTabs();
@@ -134,50 +147,56 @@ const App = {
     renderEventView(event) {
         document.getElementById('app').innerHTML = `
             <div class="event-header">
-                <div class="event-meta">
+                <div class="event-header-top">
                     <input class="editable-text event-name-input"
                            value="${this.escapeAttr(event.name || '')}"
                            placeholder="Event Name"
                            onchange="App.updateEventField('name', this.value)">
-                    <div class="event-meta-field">
-                        ${this.icons.calendar}
-                        <input class="editable-text" type="date"
-                               value="${this.escapeAttr(event.date || '')}"
-                               onchange="App.updateEventField('date', this.value)">
-                    </div>
-                    <div class="event-meta-field event-location-group">
-                        ${this.icons.mapPin}
-                        <div class="event-location-fields">
-                            <input class="editable-text"
+                    <div class="event-meta-inline">
+                        <span class="meta-item">
+                            ${this.icons.calendar}
+                            <input class="editable-text meta-date" type="date"
+                                   value="${this.escapeAttr(event.date || '')}"
+                                   onchange="App.updateEventField('date', this.value)">
+                        </span>
+                        <span class="meta-divider">·</span>
+                        <span class="meta-item">
+                            ${this.icons.mapPin}
+                            <input class="editable-text meta-venue"
                                    value="${this.escapeAttr(event.location || '')}"
-                                   placeholder="Venue Name"
+                                   placeholder="Venue"
                                    onchange="App.updateEventField('location', this.value)">
-                            <input class="editable-text event-address-input"
+                        </span>
+                        <span class="meta-divider">·</span>
+                        <span class="meta-item">
+                            <input class="editable-text meta-address"
                                    value="${this.escapeAttr(event.address || '')}"
                                    placeholder="Address"
                                    onchange="App.updateEventField('address', this.value)">
-                        </div>
+                        </span>
                     </div>
-                    <div class="event-actions">
-                        <button class="btn btn-danger btn-sm" onclick="App.showDeleteEventModal()">Delete Event</button>
+                    <div class="event-header-actions">
+                        <button class="btn-link brief-toggle-btn" onclick="App.toggleBrief()">
+                            Event Brief <span class="toggle-arrow-inline">▾</span>
+                        </button>
+                        <button class="btn-icon" title="Delete Event" onclick="App.showDeleteEventModal()">
+                            ${this.icons.trash}
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="invite-brief${this.briefExpanded ? '' : ' collapsed'}" id="invite-brief">
-                <button class="invite-brief-header" onclick="App.toggleBrief()">
-                    <span class="toggle-arrow">▼</span> Invite Brief
-                </button>
                 <div class="invite-brief-content">
                     <div class="brief-fields">
-                        <div class="brief-field">
+                        <div class="brief-field brief-field-wide">
                             <label>Hosted By</label>
                             <input class="editable-text brief-hostedby"
                                    value="${this.escapeAttr(event.hostedBy || '')}"
                                    placeholder="Host name"
                                    onchange="App.updateEventField('hostedBy', this.value)">
                         </div>
-                        <div class="brief-field">
+                        <div class="brief-field brief-field-wide">
                             <label>Dress Code</label>
                             <input class="editable-text brief-dresscode"
                                    value="${this.escapeAttr(event.dressCode || '')}"
@@ -199,23 +218,38 @@ const App = {
                             ${event.eventUrl ? `<a class="event-url-link" href="${this.escapeAttr(event.eventUrl)}" target="_blank" rel="noopener" title="Open link">↗</a>` : ''}
                         </div>
                     </div>
-                    <div class="brief-talking-points">
-                        <label>Talking Points</label>
-                        <textarea class="brief-textarea brief-talkingpoints"
-                                  placeholder="Key points for outreach..."
-                                  onchange="App.updateEventField('talkingPoints', this.value)">${this.escapeHtml(event.talkingPoints || '')}</textarea>
+                    <div class="brief-draft-email">
+                        <label>Draft Email Invite</label>
+                        <textarea class="brief-textarea brief-draftemail"
+                                  placeholder="Draft email for lobbyist outreach..."
+                                  onchange="App.updateEventField('draftEmail', this.value)">${this.escapeHtml(event.draftEmail || '')}</textarea>
                     </div>
                 </div>
             </div>
 
-            <div class="stats-bar" id="stats-bar"></div>
-
-            <div class="toolbar">
-                <div class="search-wrapper">
-                    ${this.icons.search}
-                    <input class="search-input" placeholder="Search invitees..."
-                           value="${this.escapeAttr(this.searchQuery)}"
-                           oninput="App.handleSearch(this.value)">
+            <div class="controls-bar">
+                <div class="controls-left" id="stats-bar"></div>
+                <div class="controls-right">
+                    <div class="search-wrapper">
+                        ${this.icons.search}
+                        <input class="search-input" placeholder="Search..."
+                               value="${this.escapeAttr(this.searchQuery)}"
+                               oninput="App.handleSearch(this.value)">
+                    </div>
+                    <div class="columns-toggle-wrapper">
+                        <button class="btn btn-sm columns-toggle-btn" onclick="App.toggleColumnsMenu()">
+                            ${this.icons.columns} Columns
+                        </button>
+                        <div class="columns-menu" id="columns-menu">
+                            ${FIELD_ORDER.map(field => `
+                                <label class="columns-menu-item">
+                                    <input type="checkbox" ${this.hiddenColumns[field] ? '' : 'checked'}
+                                           onchange="App.toggleColumn('${field}')">
+                                    ${HEADER_LABELS[field]}
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -267,9 +301,9 @@ const App = {
         if (eventUrlInput && document.activeElement !== eventUrlInput) {
             eventUrlInput.value = event.eventUrl || '';
         }
-        const talkingPointsInput = document.querySelector('.brief-talkingpoints');
-        if (talkingPointsInput && document.activeElement !== talkingPointsInput) {
-            talkingPointsInput.value = event.talkingPoints || '';
+        const draftEmailInput = document.querySelector('.brief-draftemail');
+        if (draftEmailInput && document.activeElement !== draftEmailInput) {
+            draftEmailInput.value = event.draftEmail || '';
         }
     },
 
@@ -286,14 +320,14 @@ const App = {
         bar.innerHTML = `
             <div class="stat-total">${total} Invitee${total !== 1 ? 's' : ''}</div>
             <div class="stat-chip stat-pending"><span class="stat-count">${counts.pending}</span> Pending</div>
+            <div class="stat-chip stat-declined"><span class="stat-count">${counts.declined}</span> Declined</div>
             <div class="stat-chip stat-invited"><span class="stat-count">${counts.invited}</span> Invited</div>
             <div class="stat-chip stat-confirmed"><span class="stat-count">${counts.confirmed}</span> Confirmed</div>
-            <div class="stat-chip stat-declined"><span class="stat-count">${counts.declined}</span> Declined</div>
-            <div class="status-bar-container" title="${pct(counts.confirmed)}% confirmed, ${pct(counts.invited)}% invited, ${pct(counts.declined)}% declined, ${pct(counts.pending)}% pending">
-                <div class="status-bar-segment seg-confirmed" style="width: ${pct(counts.confirmed)}%"></div>
-                <div class="status-bar-segment seg-invited" style="width: ${pct(counts.invited)}%"></div>
-                <div class="status-bar-segment seg-declined" style="width: ${pct(counts.declined)}%"></div>
+            <div class="status-bar-container" title="${pct(counts.pending)}% pending, ${pct(counts.declined)}% declined, ${pct(counts.invited)}% invited, ${pct(counts.confirmed)}% confirmed">
                 <div class="status-bar-segment seg-pending" style="width: ${pct(counts.pending)}%"></div>
+                <div class="status-bar-segment seg-declined" style="width: ${pct(counts.declined)}%"></div>
+                <div class="status-bar-segment seg-invited" style="width: ${pct(counts.invited)}%"></div>
+                <div class="status-bar-segment seg-confirmed" style="width: ${pct(counts.confirmed)}%"></div>
             </div>
         `;
     },
@@ -329,21 +363,21 @@ const App = {
         const rows = filtered.map(inv => this.renderInviteeRow(inv)).join('');
         const phantomRow = this.renderPhantomRow();
 
+        const visible = this.getVisibleFields();
+        const colWidths = { name: 14, title: 12, organization: 14, status: 8, seats: 4, invitedBy: 11, phone: 9, email: 12, notes: 16 };
+        const actionWidth = 4;
+        const totalUsed = visible.reduce((sum, f) => sum + colWidths[f], 0) + actionWidth;
+        const scale = 96 / totalUsed;
+
         wrapper.innerHTML = `
             <table class="invite-table">
                 <colgroup>
-                    <col style="width:16%">
-                    <col style="width:12%">
-                    <col style="width:13%">
-                    <col style="width:12%">
-                    <col style="width:11%">
-                    <col style="width:16%">
-                    <col style="width:16%">
-                    <col style="width:4%">
+                    ${visible.map(f => `<col style="width:${(colWidths[f] * scale).toFixed(1)}%">`).join('\n                    ')}
+                    <col style="width:${actionWidth}%">
                 </colgroup>
                 <thead>
                     <tr>
-                        ${FIELD_ORDER.map(field => {
+                        ${visible.map(field => {
                             const active = this.sortField === field;
                             const cls = active ? ' class="sort-active"' : '';
                             const arrow = active ? (this.sortDirection === 'asc' ? ' ▲' : ' ▼') : '';
@@ -362,17 +396,19 @@ const App = {
     },
 
     renderInviteeRow(inv) {
+        const visible = this.getVisibleFields();
+        const cells = visible.map(field => {
+            const extraClass = field === 'notes' ? ' class="notes-cell"' : '';
+            if (field === 'status') {
+                return `<td data-field="status" data-original="${this.escapeAttr(inv.status)}" title="${this.escapeAttr(this.formatStatus(inv.status))}" onclick="App.editCell(this)">
+                    <span class="status-badge status-${inv.status}">${this.formatStatus(inv.status)}</span>
+                </td>`;
+            }
+            return `<td data-field="${field}" data-original="${this.escapeAttr(inv[field])}" title="${this.escapeAttr(inv[field] || '')}" onclick="App.editCell(this)"${extraClass}>${this.cellDisplay(inv[field], field)}</td>`;
+        }).join('');
         return `
             <tr data-id="${inv.id}">
-                <td data-field="name" data-original="${this.escapeAttr(inv.name)}" onclick="App.editCell(this)">${this.cellDisplay(inv.name, 'name')}</td>
-                <td data-field="title" data-original="${this.escapeAttr(inv.title)}" onclick="App.editCell(this)">${this.cellDisplay(inv.title, 'title')}</td>
-                <td data-field="organization" data-original="${this.escapeAttr(inv.organization)}" onclick="App.editCell(this)">${this.cellDisplay(inv.organization, 'organization')}</td>
-                <td data-field="status" data-original="${this.escapeAttr(inv.status)}" onclick="App.editCell(this)">
-                    <span class="status-badge status-${inv.status}">${this.formatStatus(inv.status)}</span>
-                </td>
-                <td data-field="phone" data-original="${this.escapeAttr(inv.phone)}" onclick="App.editCell(this)">${this.cellDisplay(inv.phone, 'phone')}</td>
-                <td data-field="email" data-original="${this.escapeAttr(inv.email)}" onclick="App.editCell(this)">${this.cellDisplay(inv.email, 'email')}</td>
-                <td data-field="notes" data-original="${this.escapeAttr(inv.notes)}" onclick="App.editCell(this)" class="notes-cell">${this.cellDisplay(inv.notes, 'notes')}</td>
+                ${cells}
                 <td>
                     <div class="row-actions">
                         <button class="btn-icon" title="Delete" onclick="App.showDeleteModal('${inv.id}', '${this.escapeAttr(inv.name)}')">
@@ -392,7 +428,7 @@ const App = {
     },
 
     renderPhantomRow() {
-        const fields = FIELD_ORDER.map(field => {
+        const fields = this.getVisibleFields().map(field => {
             const val = this.pendingNewRow[field] || '';
             let display;
             if (val) {
@@ -666,12 +702,13 @@ const App = {
     },
 
     navigateCell(row, currentField, direction) {
-        const idx = FIELD_ORDER.indexOf(currentField);
+        const visible = this.getVisibleFields();
+        const idx = visible.indexOf(currentField);
         const nextIdx = idx + direction;
         const isPhantom = row.dataset.phantom === 'true';
 
-        if (nextIdx >= 0 && nextIdx < FIELD_ORDER.length) {
-            const nextCell = row.querySelector(`td[data-field="${FIELD_ORDER[nextIdx]}"]`);
+        if (nextIdx >= 0 && nextIdx < visible.length) {
+            const nextCell = row.querySelector(`td[data-field="${visible[nextIdx]}"]`);
             if (nextCell) this.editCell(nextCell);
         } else if (direction > 0) {
             if (isPhantom) {
@@ -680,13 +717,13 @@ const App = {
             }
             const nextRow = row.nextElementSibling;
             if (nextRow && (nextRow.dataset.id || nextRow.dataset.phantom)) {
-                const nextCell = nextRow.querySelector(`td[data-field="${FIELD_ORDER[0]}"]`);
+                const nextCell = nextRow.querySelector(`td[data-field="${visible[0]}"]`);
                 if (nextCell) this.editCell(nextCell);
             }
         } else if (direction < 0) {
             const prevRow = row.previousElementSibling;
             if (prevRow && (prevRow.dataset.id || prevRow.dataset.phantom)) {
-                const prevCell = prevRow.querySelector(`td[data-field="${FIELD_ORDER[FIELD_ORDER.length - 1]}"]`);
+                const prevCell = prevRow.querySelector(`td[data-field="${visible[visible.length - 1]}"]`);
                 if (prevCell) this.editCell(prevCell);
             }
         }
@@ -801,6 +838,24 @@ const App = {
         this.briefExpanded = !this.briefExpanded;
         const panel = document.getElementById('invite-brief');
         if (panel) panel.classList.toggle('collapsed', !this.briefExpanded);
+    },
+
+    toggleColumnsMenu() {
+        const menu = document.getElementById('columns-menu');
+        if (menu) menu.classList.toggle('active');
+    },
+
+    toggleColumn(field) {
+        if (this.hiddenColumns[field]) {
+            delete this.hiddenColumns[field];
+        } else {
+            this.hiddenColumns[field] = true;
+        }
+        this.renderTable();
+    },
+
+    getVisibleFields() {
+        return FIELD_ORDER.filter(f => !this.hiddenColumns[f]);
     },
 
     // ── Empty Events State ──────────────────────────

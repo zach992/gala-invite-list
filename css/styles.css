@@ -174,31 +174,15 @@ body {
 
 /* ── Event Header ────────────────────────────────── */
 .event-header {
-    padding: 24px 24px 0;
-    max-width: 1200px;
+    padding: 16px 24px 8px;
+    max-width: 1600px;
     margin: 0 auto;
 }
 
-.event-meta {
+.event-header-top {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     gap: 16px;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.event-meta-field {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-.event-meta-field svg {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
 }
 
 .editable-text {
@@ -211,7 +195,7 @@ body {
     border-radius: var(--radius-sm);
     border: 1px solid transparent;
     transition: all var(--transition);
-    min-width: 80px;
+    min-width: 60px;
 }
 .editable-text:hover { border-color: var(--border); }
 .editable-text:focus {
@@ -222,63 +206,123 @@ body {
 
 .event-name-input {
     font-family: var(--font-display);
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 600;
     letter-spacing: -0.02em;
-    width: 100%;
-    max-width: 400px;
+    flex-shrink: 0;
+    width: auto;
+    max-width: 420px;
 }
 
-.event-location-fields {
+.event-meta-inline {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
 }
 
-.event-address-input {
-    font-size: 12px;
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+.meta-item svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+.meta-date { width: 110px; font-size: 13px; color: var(--text-secondary); }
+.meta-venue { width: 120px; font-size: 13px; color: var(--text-secondary); }
+.meta-address { font-size: 12px; color: var(--text-muted); min-width: 220px; }
+
+.meta-divider {
     color: var(--text-muted);
+    font-size: 16px;
+    user-select: none;
 }
 
-.event-actions {
+.event-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.btn-link {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.btn-link:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-light); }
+
+.toggle-arrow-inline {
+    font-size: 10px;
+    transition: transform var(--transition);
+}
+
+/* ── Controls Bar (Stats + Search merged) ────────── */
+.controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 24px 12px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.controls-left {
     display: flex;
     gap: 8px;
-    margin-left: auto;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-/* ── Stats Bar ───────────────────────────────────── */
-.stats-bar {
+.controls-right {
     display: flex;
-    gap: 10px;
-    padding: 16px 24px;
-    max-width: 1200px;
-    margin: 0 auto;
     align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .stat-total {
     font-family: var(--font-display);
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--text);
-    margin-right: 6px;
+    margin-right: 4px;
     white-space: nowrap;
 }
 
 .stat-chip {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
     font-weight: 500;
     border: 1px solid;
 }
 
 .stat-chip .stat-count {
     font-weight: 700;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .stat-pending { background: var(--status-pending-bg); color: var(--status-pending-text); border-color: var(--status-pending-border); }
@@ -287,14 +331,14 @@ body {
 .stat-declined { background: var(--status-declined-bg); color: var(--status-declined-text); border-color: var(--status-declined-border); }
 
 .status-bar-container {
-    flex: 1;
-    max-width: 200px;
-    height: 6px;
+    width: 120px;
+    height: 5px;
     background: var(--border);
     border-radius: 3px;
     overflow: hidden;
-    margin-left: 4px;
+    margin-left: 2px;
     display: flex;
+    flex-shrink: 0;
 }
 
 .status-bar-segment {
@@ -307,44 +351,80 @@ body {
 .status-bar-segment.seg-declined { background: var(--status-declined-bg); }
 .status-bar-segment.seg-pending { background: var(--status-pending-bg); }
 
-/* ── Toolbar ─────────────────────────────────────── */
-.toolbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 24px 16px;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
+/* ── Search ──────────────────────────────────────── */
 .search-input {
-    flex: 1;
-    max-width: 320px;
-    padding: 8px 12px 8px 36px;
+    width: 180px;
+    padding: 6px 10px 6px 32px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     font-family: inherit;
-    font-size: 13px;
+    font-size: 12px;
     background: var(--surface);
     color: var(--text);
     transition: border-color var(--transition);
 }
-.search-input:focus { outline: none; border-color: var(--accent); }
+.search-input:focus { outline: none; border-color: var(--accent); width: 240px; }
 
 .search-wrapper {
     position: relative;
-    flex: 1;
-    max-width: 320px;
 }
 .search-wrapper svg {
     position: absolute;
-    left: 10px;
+    left: 9px;
     top: 50%;
     transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     color: var(--text-muted);
     pointer-events: none;
+}
+
+/* ── Columns Toggle ────────────────────────────── */
+.columns-toggle-wrapper {
+    position: relative;
+}
+.columns-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+.columns-toggle-btn svg {
+    width: 14px;
+    height: 14px;
+}
+.columns-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 4px;
+    z-index: 100;
+    min-width: 170px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+.columns-menu.active {
+    display: block;
+}
+.columns-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+}
+.columns-menu-item:hover {
+    background: var(--surface-hover);
+}
+.columns-menu-item input[type="checkbox"] {
+    accent-color: var(--accent);
 }
 
 /* ── Sort Indicator ─────────────────────────────── */
@@ -354,17 +434,13 @@ body {
 
 /* ── Invite Brief Panel ─────────────────────────── */
 .invite-brief {
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 0 24px;
 }
 
 .invite-brief-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 0;
-    cursor: pointer;
+    display: none;
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);
@@ -401,8 +477,12 @@ body {
 
 .brief-fields {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 24px;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.brief-field .editable-text {
+    flex: 1;
 }
 
 .brief-field {
@@ -422,8 +502,13 @@ body {
 }
 
 .brief-field .editable-text {
-    flex: 1;
     font-size: 13px;
+}
+
+.brief-rsvp,
+.brief-eventurl {
+    flex: 0 1 auto !important;
+    width: auto;
 }
 
 .brief-field .event-url-link {
@@ -438,11 +523,11 @@ body {
     color: var(--accent-hover);
 }
 
-.brief-talking-points {
+.brief-draft-email {
     margin-top: 12px;
 }
 
-.brief-talking-points label {
+.brief-draft-email label {
     display: block;
     font-size: 11px;
     font-weight: 600;
@@ -450,6 +535,10 @@ body {
     margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+.brief-draft-email .brief-textarea {
+    min-height: 120px;
 }
 
 .brief-textarea {
@@ -480,7 +569,7 @@ body {
 /* ── Table ───────────────────────────────────────── */
 .table-container {
     padding: 0 24px 24px;
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
 }
 
@@ -512,12 +601,14 @@ body {
 .invite-table th:hover { color: var(--text-secondary); }
 
 .invite-table td {
-    padding: 13px 14px;
-    font-size: 14px;
+    padding: 10px 10px;
+    font-size: 13px;
     border-bottom: 1px solid var(--border-light);
-    vertical-align: middle;
+    vertical-align: top;
     min-height: 40px;
     transition: background-color var(--transition);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .invite-table tr:last-child td { border-bottom: none; }
@@ -638,14 +729,7 @@ tr.editing td {
 
 /* ── Cell text truncation (fixed-width columns) ──── */
 .invite-table td[data-field] {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.invite-table td[data-field="status"] {
-    overflow: visible;
-    text-overflow: clip;
+    white-space: normal;
 }
 
 /* ── Keyboard Hints (table footer bar) ──────────── */
@@ -844,15 +928,13 @@ tr.editing td {
 @media (max-width: 768px) {
     .app-header { padding: 12px 16px; }
     .tabs-container { padding: 4px 16px; }
-    .event-header, .stats-bar, .toolbar, .table-container { padding-left: 16px; padding-right: 16px; }
-    .stats-bar { flex-wrap: wrap; gap: 8px; }
-    .toolbar { flex-wrap: wrap; }
-    .search-wrapper { max-width: 100%; }
+    .event-header, .controls-bar, .table-container { padding-left: 16px; padding-right: 16px; }
 
     .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-    .event-meta { flex-direction: column; align-items: flex-start; }
-    .event-actions { margin-left: 0; }
+    .event-header-top { flex-wrap: wrap; }
+    .event-meta-inline { flex-wrap: wrap; }
+    .controls-bar { flex-wrap: wrap; }
 
     .invite-brief { padding: 0 16px; }
     .brief-fields { grid-template-columns: 1fr; }
