@@ -20,7 +20,6 @@ const Data = {
             date: event.date || '',
             location: event.location || '',
             address: event.address || '',
-            hostedBy: event.hostedBy || '',
             dressCode: event.dressCode || '',
             rsvpDeadline: event.rsvpDeadline || '',
             eventUrl: event.eventUrl || '',

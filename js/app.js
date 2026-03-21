@@ -12,6 +12,7 @@ const App = {
     invitees: [],
     activeEventId: null,
     inviteeListener: null,
+    currentUser: null,
     searchQuery: '',
     sortField: 'status',
     sortDirection: 'asc',
@@ -32,6 +33,7 @@ const App = {
         users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
         fileText: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
         columns: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>',
+        download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
     },
 
     // ── Init ────────────────────────────────────────
@@ -41,17 +43,86 @@ const App = {
                 <div class="config-warning">
                     <h2>Firebase Not Configured</h2>
                     <p>Open <code>js/config.js</code> and add your Firebase project credentials.</p>
-                    <p style="margin-top: 12px; font-size: 13px;">
-                        1. Go to <strong>Firebase Console</strong> → Create project<br>
-                        2. Enable <strong>Firestore Database</strong><br>
-                        3. Register a <strong>Web App</strong><br>
-                        4. Copy the config into <code>js/config.js</code>
-                    </p>
                 </div>
             `;
             document.getElementById('tabs-container').innerHTML = '';
             return;
         }
+
+        // Check for stored user
+        const stored = sessionStorage.getItem('currentUser');
+        if (stored) {
+            this.currentUser = stored;
+            this.startApp();
+        } else {
+            this.renderSplashScreen();
+        }
+    },
+
+    // ── Splash Screen ────────────────────────────────
+    async renderSplashScreen() {
+        document.getElementById('tabs-container').innerHTML = '';
+        document.querySelector('.app-header').innerHTML = '<div class="app-title">Invite Lists</div>';
+        document.getElementById('app').innerHTML = `
+            <div class="splash-screen">
+                <div class="splash-card">
+                    <div class="splash-title">Welcome</div>
+                    <p class="splash-subtitle">Select your name to view your invite lists.</p>
+                    <div class="splash-buttons" id="splash-buttons">
+                        <div style="color: var(--text-muted); font-size: 13px;">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const snapshot = await db.collection('invitees').get();
+        const names = new Set();
+        snapshot.forEach(doc => {
+            const invitedBy = doc.data().invitedBy;
+            if (invitedBy && invitedBy.trim()) {
+                invitedBy.split(',').forEach(n => {
+                    const trimmed = n.trim();
+                    if (trimmed) names.add(trimmed);
+                });
+            }
+        });
+        const sorted = [...names].sort();
+
+        const container = document.getElementById('splash-buttons');
+        if (!container) return;
+        container.innerHTML = sorted.map(name =>
+            `<button class="splash-btn" onclick="App.selectUser('${this.escapeAttr(name)}')">${this.escapeHtml(name)}</button>`
+        ).join('') + `<button class="splash-btn splash-btn-admin" onclick="App.selectUser('all')">YMU Team</button>`;
+    },
+
+    selectUser(name) {
+        this.currentUser = name;
+        sessionStorage.setItem('currentUser', name);
+        this.updateHeaderUser();
+        this.startApp();
+    },
+
+    switchUser() {
+        sessionStorage.removeItem('currentUser');
+        this.currentUser = null;
+        this.activeEventId = null;
+        if (this.inviteeListener) this.inviteeListener();
+        this.inviteeListener = null;
+        this.renderSplashScreen();
+    },
+
+    updateHeaderUser() {
+        const displayName = this.currentUser === 'all' ? 'YMU Team' : this.currentUser;
+        document.querySelector('.app-header').innerHTML = `
+            <div class="app-title">Invite Lists</div>
+            <div class="user-indicator">
+                ${displayName} <span class="user-switch" onclick="App.switchUser()">Switch</span>
+            </div>
+        `;
+    },
+
+    startApp() {
+        this.updateHeaderUser();
 
         Data.listenToEvents(events => {
             this.events = events;
@@ -64,10 +135,8 @@ const App = {
                 if (exists) {
                     const wrapper = document.getElementById('invite-table-wrapper');
                     if (wrapper) {
-                        // View already rendered — just update header fields in place
                         this.updateEventHeader(exists);
                     } else {
-                        // First render or DOM was cleared — full render needed
                         this.renderEventView(exists);
                     }
                 } else if (events.length > 0) {
@@ -99,7 +168,13 @@ const App = {
                 menu.classList.remove('active');
             }
         });
+    },
 
+    getFilteredInvitees() {
+        if (this.currentUser && this.currentUser !== 'all') {
+            return this.invitees.filter(inv => (inv.invitedBy || '').includes(this.currentUser));
+        }
+        return this.invitees;
     },
 
     // ── Tab Rendering ───────────────────────────────
@@ -190,13 +265,6 @@ const App = {
                 <div class="invite-brief-content">
                     <div class="brief-fields">
                         <div class="brief-field brief-field-wide">
-                            <label>Hosted By</label>
-                            <input class="editable-text brief-hostedby"
-                                   value="${this.escapeAttr(event.hostedBy || '')}"
-                                   placeholder="Host name"
-                                   onchange="App.updateEventField('hostedBy', this.value)">
-                        </div>
-                        <div class="brief-field brief-field-wide">
                             <label>Dress Code</label>
                             <input class="editable-text brief-dresscode"
                                    value="${this.escapeAttr(event.dressCode || '')}"
@@ -236,6 +304,9 @@ const App = {
                                value="${this.escapeAttr(this.searchQuery)}"
                                oninput="App.handleSearch(this.value)">
                     </div>
+                    <button class="btn btn-sm columns-toggle-btn" onclick="App.exportCSV()">
+                        ${this.icons.download} Export
+                    </button>
                     <div class="columns-toggle-wrapper">
                         <button class="btn btn-sm columns-toggle-btn" onclick="App.toggleColumnsMenu()">
                             ${this.icons.columns} Columns
@@ -285,10 +356,6 @@ const App = {
         if (addressInput && document.activeElement !== addressInput) {
             addressInput.value = event.address || '';
         }
-        const hostedByInput = document.querySelector('.brief-hostedby');
-        if (hostedByInput && document.activeElement !== hostedByInput) {
-            hostedByInput.value = event.hostedBy || '';
-        }
         const dressCodeInput = document.querySelector('.brief-dresscode');
         if (dressCodeInput && document.activeElement !== dressCodeInput) {
             dressCodeInput.value = event.dressCode || '';
@@ -308,12 +375,23 @@ const App = {
     },
 
     // ── Stats ───────────────────────────────────────
+    getSeats(inv) {
+        const s = parseInt(inv.seats, 10);
+        return isNaN(s) ? 0 : s;
+    },
+
     renderStats() {
+        const visible = this.getFilteredInvitees();
         const counts = { pending: 0, invited: 0, confirmed: 0, declined: 0 };
-        this.invitees.forEach(inv => {
-            if (counts[inv.status] !== undefined) counts[inv.status]++;
+        const seats = { pending: 0, invited: 0, confirmed: 0, declined: 0 };
+        visible.forEach(inv => {
+            if (counts[inv.status] !== undefined) {
+                counts[inv.status]++;
+                seats[inv.status] += this.getSeats(inv);
+            }
         });
-        const total = this.invitees.length;
+        const total = visible.length;
+        const totalSeats = seats.pending + seats.invited + seats.confirmed + seats.declined;
         const pct = (n) => total > 0 ? ((n / total) * 100).toFixed(1) : 0;
         const bar = document.getElementById('stats-bar');
         if (!bar) return;
@@ -329,6 +407,10 @@ const App = {
                 <div class="status-bar-segment seg-invited" style="width: ${pct(counts.invited)}%"></div>
                 <div class="status-bar-segment seg-confirmed" style="width: ${pct(counts.confirmed)}%"></div>
             </div>
+            <div class="seats-summary">
+                ${seats.invited + seats.confirmed} seat${(seats.invited + seats.confirmed) !== 1 ? 's' : ''}
+                <span class="seats-breakdown">(${seats.invited} invited · ${seats.confirmed} confirmed)</span>
+            </div>
         `;
     },
 
@@ -337,7 +419,7 @@ const App = {
         const wrapper = document.getElementById('invite-table-wrapper');
         if (!wrapper) return;
 
-        let filtered = this.invitees;
+        let filtered = this.getFilteredInvitees();
 
         if (this.searchQuery) {
             const q = this.searchQuery.toLowerCase();
@@ -843,6 +925,45 @@ const App = {
     toggleColumnsMenu() {
         const menu = document.getElementById('columns-menu');
         if (menu) menu.classList.toggle('active');
+    },
+
+    exportCSV() {
+        const event = this.events.find(e => e.id === this.activeEventId);
+        const eventName = event ? event.name : 'invitees';
+        let filtered = this.getFilteredInvitees();
+        if (this.searchQuery) {
+            const q = this.searchQuery.toLowerCase();
+            filtered = filtered.filter(inv =>
+                (inv.name || '').toLowerCase().includes(q) ||
+                (inv.title || '').toLowerCase().includes(q) ||
+                (inv.organization || '').toLowerCase().includes(q) ||
+                (inv.notes || '').toLowerCase().includes(q)
+            );
+        }
+
+        const headers = ['Name', 'Title', 'Organization', 'Status', 'Seats', 'Invited By', 'Phone', 'Email', 'Notes'];
+        const fields = ['name', 'title', 'organization', 'status', 'seats', 'invitedBy', 'phone', 'email', 'notes'];
+        const csvEscape = (val) => {
+            const s = (val || '').toString();
+            if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                return '"' + s.replace(/"/g, '""') + '"';
+            }
+            return s;
+        };
+
+        const rows = [headers.join(',')];
+        filtered.forEach(inv => {
+            rows.push(fields.map(f => csvEscape(inv[f])).join(','));
+        });
+
+        const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = eventName.replace(/[^a-zA-Z0-9]/g, '-') + '-invitees.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showToast('Exported CSV');
     },
 
     toggleColumn(field) {

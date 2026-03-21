@@ -71,6 +71,101 @@ body {
     letter-spacing: -0.02em;
 }
 
+.user-indicator {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-switch {
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition);
+}
+.user-switch:hover {
+    background: var(--accent-light);
+    color: var(--accent-hover);
+}
+
+/* ── Splash Screen ──────────────────────────────── */
+.splash-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 60px);
+    padding: 24px;
+}
+
+.splash-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+}
+
+.splash-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.splash-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.splash-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.splash-btn {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-align: left;
+}
+.splash-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.splash-btn-admin {
+    margin-top: 8px;
+    border-style: dashed;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: center;
+}
+.splash-btn-admin:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+}
+}
+
 .header-actions {
     display: flex;
     gap: 8px;
@@ -350,6 +445,19 @@ body {
 .status-bar-segment.seg-invited { background: var(--status-invited-bg); }
 .status-bar-segment.seg-declined { background: var(--status-declined-bg); }
 .status-bar-segment.seg-pending { background: var(--status-pending-bg); }
+
+.seats-summary {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: 4px;
+}
+
+.seats-breakdown {
+    color: var(--text-muted);
+    font-weight: 400;
+}
 
 /* ── Search ──────────────────────────────────────── */
 .search-input {
