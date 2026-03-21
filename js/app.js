@@ -22,6 +22,7 @@ const App = {
     editingRowId: null,
     renderPending: false,
     pendingNewRow: {},
+    lastAddedId: null,
 
     // ── Icons (inline SVG) ──────────────────────────
     icons: {
@@ -331,11 +332,14 @@ const App = {
                 <div class="table-scroll">
                     <div id="invite-table-wrapper"></div>
                 </div>
-                <div class="keyboard-hints">
-                    <span><kbd>Click</kbd> cell to edit</span>
-                    <span><kbd>Tab</kbd> next cell</span>
-                    <span><kbd>Enter</kbd> next row</span>
-                    <span><kbd>Esc</kbd> cancel</span>
+                <div style="position: relative;">
+                    <div class="keyboard-hints${sessionStorage.getItem('hintsHidden') ? ' hidden' : ''}" id="keyboard-hints">
+                        <span><kbd>Click</kbd> cell to edit</span>
+                        <span><kbd>Tab</kbd> next cell</span>
+                        <span><kbd>Enter</kbd> next row</span>
+                        <span><kbd>Esc</kbd> cancel</span>
+                    </div>
+                    <span class="keyboard-hints-toggle" onclick="App.toggleHints()" title="Keyboard shortcuts">?</span>
                 </div>
             </div>
         `;
@@ -478,6 +482,16 @@ const App = {
         if (filtered.length === 0 && this.searchQuery) {
             wrapper.innerHTML = `<div class="empty-state"><p>No invitees match your search.</p></div>`;
         }
+
+        if (this.lastAddedId) {
+            const newRow = wrapper.querySelector(`tr[data-id="${this.lastAddedId}"]`);
+            if (newRow) {
+                newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                newRow.classList.add('row-just-added');
+                setTimeout(() => newRow.classList.remove('row-just-added'), 1500);
+            }
+            this.lastAddedId = null;
+        }
     },
 
     renderInviteeRow(inv) {
@@ -499,7 +513,7 @@ const App = {
             return `<td data-field="${field}" data-original="${this.escapeAttr(inv[field])}" title="${this.escapeAttr(inv[field] || '')}" onclick="App.editCell(this)"${extraClass}>${this.cellDisplay(inv[field], field)}</td>`;
         }).join('');
         return `
-            <tr data-id="${inv.id}">
+            <tr data-id="${inv.id}" data-status="${inv.status || 'pending'}">
                 ${cells}
                 <td>
                     <div class="row-actions">
@@ -519,7 +533,7 @@ const App = {
         if (value && value.trim()) {
             return this.escapeHtml(value);
         }
-        return `<span class="cell-placeholder">&mdash;</span>`;
+        return '';
     },
 
     renderPhantomRow() {
@@ -532,9 +546,10 @@ const App = {
                 } else {
                     display = this.escapeHtml(val);
                 }
+            } else if (field === 'name') {
+                display = `<span class="phantom-placeholder">Add new invitee...</span>`;
             } else {
-                const placeholder = field === 'status' ? '+ status' : `+ ${field}`;
-                display = `<span class="phantom-placeholder">${placeholder}</span>`;
+                display = '';
             }
             return `<td data-field="${field}" onclick="App.editCell(this)">${display}</td>`;
         }).join('');
@@ -549,6 +564,8 @@ const App = {
         const row = cell.closest('tr');
         const field = cell.dataset.field;
         if (!field) return;
+
+        this.hideHintsOnFirstEdit();
 
         const isPhantom = row.dataset.phantom === 'true';
         const rowId = isPhantom ? 'phantom' : row.dataset.id;
@@ -769,7 +786,7 @@ const App = {
         } else if (original) {
             cell.textContent = original;
         } else {
-            cell.innerHTML = `<span class="cell-placeholder">&mdash;</span>`;
+            cell.textContent = '';
         }
     },
 
@@ -782,9 +799,10 @@ const App = {
             } else {
                 cell.textContent = val;
             }
+        } else if (field === 'name') {
+            cell.innerHTML = `<span class="phantom-placeholder">Add new invitee...</span>`;
         } else {
-            const placeholder = field === 'status' ? '+ status' : `+ ${field}`;
-            cell.innerHTML = `<span class="phantom-placeholder">${placeholder}</span>`;
+            cell.textContent = '';
         }
     },
 
@@ -855,7 +873,8 @@ const App = {
         this.clearEditingFlag();
 
         try {
-            await Data.addInvitee(data);
+            const ref = await Data.addInvitee(data);
+            this.lastAddedId = ref.id;
             this.showToast('Invitee added');
         } catch (error) {
             console.error('Error adding invitee:', error);
@@ -933,6 +952,27 @@ const App = {
         this.briefExpanded = !this.briefExpanded;
         const panel = document.getElementById('invite-brief');
         if (panel) panel.classList.toggle('collapsed', !this.briefExpanded);
+    },
+
+    toggleHints() {
+        const hints = document.getElementById('keyboard-hints');
+        if (!hints) return;
+        if (hints.classList.contains('hidden')) {
+            hints.classList.remove('hidden');
+            sessionStorage.removeItem('hintsHidden');
+        } else {
+            hints.classList.add('hidden');
+            sessionStorage.setItem('hintsHidden', '1');
+        }
+    },
+
+    hideHintsOnFirstEdit() {
+        if (sessionStorage.getItem('hintsHidden')) return;
+        const hints = document.getElementById('keyboard-hints');
+        if (hints && !hints.classList.contains('hidden')) {
+            hints.classList.add('hidden');
+            sessionStorage.setItem('hintsHidden', '1');
+        }
     },
 
     toggleColumnsMenu() {
