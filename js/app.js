@@ -663,9 +663,15 @@ const App = {
                 const id = row.dataset.id;
                 const item = this.invitees.find(i => i.id === id);
                 if (item && item.status !== val) {
+                    const oldStatus = item.status;
+                    item.status = val;
                     Data.updateInvitee(id, { status: val })
                         .then(() => this.showToast('Updated'))
-                        .catch(err => this.showToast('Error saving', 'error'));
+                        .catch(err => {
+                            item.status = oldStatus;
+                            this.showToast('Error saving', 'error');
+                            this.renderTable();
+                        });
                 }
             }
             if (!row.querySelector('.inline-edit-input') && !row.querySelector('.status-picker')) {
@@ -770,11 +776,17 @@ const App = {
 
         if (newValue === oldValue) return;
 
+        // Optimistic update: apply to local state immediately so any
+        // re-render (e.g. from an onSnapshot) shows the new value.
+        item[field] = newValue;
+
         Data.updateInvitee(id, { [field]: newValue })
             .then(() => this.showToast('Updated'))
             .catch(err => {
                 console.error('Error saving cell:', err);
+                item[field] = oldValue;
                 this.showToast('Error saving', 'error');
+                this.renderTable();
             });
     },
 
