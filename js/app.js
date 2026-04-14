@@ -178,6 +178,11 @@ const App = {
         return this.invitees;
     },
 
+    matchesSearch(inv, q) {
+        const fields = ['name', 'title', 'organization', 'invitedBy', 'notes', 'email', 'phone'];
+        return fields.some(f => (inv[f] || '').toLowerCase().includes(q));
+    },
+
     // ── Tab Rendering ───────────────────────────────
     renderTabs() {
         const container = document.getElementById('tabs-container');
@@ -430,12 +435,7 @@ const App = {
 
         if (this.searchQuery) {
             const q = this.searchQuery.toLowerCase();
-            filtered = filtered.filter(inv =>
-                (inv.name || '').toLowerCase().includes(q) ||
-                (inv.title || '').toLowerCase().includes(q) ||
-                (inv.organization || '').toLowerCase().includes(q) ||
-                (inv.notes || '').toLowerCase().includes(q)
-            );
+            filtered = filtered.filter(inv => this.matchesSearch(inv, q));
         }
 
         filtered = [...filtered].sort((a, b) => {
@@ -1244,12 +1244,7 @@ const App = {
         let filtered = this.getFilteredInvitees();
         if (this.searchQuery) {
             const q = this.searchQuery.toLowerCase();
-            filtered = filtered.filter(inv =>
-                (inv.name || '').toLowerCase().includes(q) ||
-                (inv.title || '').toLowerCase().includes(q) ||
-                (inv.organization || '').toLowerCase().includes(q) ||
-                (inv.notes || '').toLowerCase().includes(q)
-            );
+            filtered = filtered.filter(inv => this.matchesSearch(inv, q));
         }
 
         const headers = ['Name', 'Title', 'Organization', 'Status', 'Seats', 'Invited By', 'Phone', 'Email', 'Notes'];
