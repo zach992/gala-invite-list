@@ -1004,6 +1004,7 @@ const App = {
         document.getElementById('detail-title').textContent = [inv.title, inv.organization].filter(Boolean).join(' · ');
         document.getElementById('detail-headshot-url').value = inv.headshotUrl || '';
         document.getElementById('detail-bio').value = inv.bio || '';
+        document.getElementById('detail-exclude-facebook').checked = !!inv.excludeFromFacebook;
         this.previewHeadshot(inv.headshotUrl || '');
 
         document.getElementById('detail-modal').classList.add('active');
@@ -1035,7 +1036,8 @@ const App = {
         if (!this.detailInviteeId) return;
         const headshotUrl = document.getElementById('detail-headshot-url').value.trim();
         const bio = document.getElementById('detail-bio').value.trim();
-        Data.updateInvitee(this.detailInviteeId, { headshotUrl, bio })
+        const excludeFromFacebook = document.getElementById('detail-exclude-facebook').checked;
+        Data.updateInvitee(this.detailInviteeId, { headshotUrl, bio, excludeFromFacebook })
             .then(() => {
                 this.showToast('Profile saved');
                 this.closeDetailModal();
@@ -1046,7 +1048,7 @@ const App = {
     // ── Print Facebook ──────────────────────────────
     printFacebook() {
         const filtered = this.getFilteredInvitees().filter(inv =>
-            inv.status === 'invited' || inv.status === 'confirmed'
+            (inv.status === 'invited' || inv.status === 'confirmed') && !inv.excludeFromFacebook
         );
 
         if (filtered.length === 0) {
