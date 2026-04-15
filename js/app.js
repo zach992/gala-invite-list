@@ -183,6 +183,12 @@ const App = {
         return fields.some(f => (inv[f] || '').toLowerCase().includes(q));
     },
 
+    hasSuggestions(inv) {
+        const s = inv.pendingSuggestions;
+        if (!s) return false;
+        return Object.keys(s).some(k => s[k]);
+    },
+
     // ── Tab Rendering ───────────────────────────────
     renderTabs() {
         const container = document.getElementById('tabs-container');
@@ -517,8 +523,9 @@ const App = {
                 ${cells}
                 <td>
                     <div class="row-actions">
-                        <button class="btn-icon" title="Profile & Headshot" onclick="App.openDetailModal('${inv.id}')">
+                        <button class="btn-icon profile-btn${this.hasSuggestions(inv) ? ' has-suggestions' : ''}" title="${this.hasSuggestions(inv) ? 'Proposed updates ready' : 'Profile & Headshot'}" onclick="App.openDetailModal('${inv.id}')">
                             ${this.icons.users}
+                            ${this.hasSuggestions(inv) ? '<span class="suggestion-dot" aria-hidden="true"></span>' : ''}
                         </button>
                         <button class="btn-icon" title="Delete" onclick="App.showDeleteModal('${inv.id}', '${this.escapeAttr(inv.name)}')">
                             ${this.icons.trash}
@@ -779,8 +786,11 @@ const App = {
         // Optimistic update: apply to local state immediately so any
         // re-render (e.g. from an onSnapshot) shows the new value.
         item[field] = newValue;
+        const hadSuggestion = item.pendingSuggestions && item.pendingSuggestions[field];
+        if (hadSuggestion) delete item.pendingSuggestions[field];
 
         Data.updateInvitee(id, { [field]: newValue })
+            .then(() => hadSuggestion ? Data.clearSuggestions(id, [field]) : null)
             .then(() => this.showToast('Updated'))
             .catch(err => {
                 console.error('Error saving cell:', err);
@@ -1006,8 +1016,105 @@ const App = {
         document.getElementById('detail-bio').value = inv.bio || '';
         document.getElementById('detail-exclude-facebook').checked = !!inv.excludeFromFacebook;
         this.previewHeadshot(inv.headshotUrl || '');
+        this.renderSuggestions(inv);
 
         document.getElementById('detail-modal').classList.add('active');
+    },
+
+    renderSuggestions(inv) {
+        const container = document.getElementById('detail-suggestions');
+        const suggestions = inv.pendingSuggestions || {};
+        const fields = Object.keys(suggestions).filter(k => suggestions[k]);
+        if (!fields.length) {
+            container.innerHTML = '';
+            container.style.display = 'none';
+            return;
+        }
+        container.style.display = 'block';
+
+        const labels = { bio: 'Bio', headshotUrl: 'Headshot URL', title: 'Title', organization: 'Organization' };
+        const rows = fields.map(field => {
+            const current = inv[field] || '';
+            const proposed = suggestions[field] || '';
+            return `
+                <div class="proposed-field">
+                    <div class="proposed-field-label">${this.escapeHtml(labels[field] || field)}</div>
+                    <div class="proposed-field-values">
+                        <div class="proposed-current">
+                            <div class="proposed-tag">Current</div>
+                            <div class="proposed-text">${current ? this.escapeHtml(current) : '<em>empty</em>'}</div>
+                        </div>
+                        <div class="proposed-new">
+                            <div class="proposed-tag">Proposed</div>
+                            <div class="proposed-text">${this.escapeHtml(proposed)}</div>
+                        </div>
+                    </div>
+                    <div class="proposed-field-actions">
+                        <button class="btn btn-sm" onclick="App.rejectSuggestion('${field}')">Reject</button>
+                        <button class="btn btn-sm btn-primary" onclick="App.acceptSuggestion('${field}')">Accept</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="suggestions-header">
+                <div class="suggestions-title">Proposed Updates <span class="suggestions-count">${fields.length}</span></div>
+                <div class="suggestions-bulk">
+                    <button class="btn btn-sm" onclick="App.rejectAllSuggestions()">Reject all</button>
+                    <button class="btn btn-sm btn-primary" onclick="App.acceptAllSuggestions()">Accept all</button>
+                </div>
+            </div>
+            ${rows}
+        `;
+    },
+
+    acceptSuggestion(field) {
+        const inv = this.invitees.find(i => i.id === this.detailInviteeId);
+        if (!inv || !inv.pendingSuggestions || !inv.pendingSuggestions[field]) return;
+        const value = inv.pendingSuggestions[field];
+        Data.acceptSuggestion(this.detailInviteeId, field, value)
+            .then(() => {
+                inv[field] = value;
+                delete inv.pendingSuggestions[field];
+                if (field === 'headshotUrl') {
+                    document.getElementById('detail-headshot-url').value = value;
+                    this.previewHeadshot(value);
+                }
+                if (field === 'bio') document.getElementById('detail-bio').value = value;
+                if (field === 'title' || field === 'organization') {
+                    document.getElementById('detail-title').textContent = [inv.title, inv.organization].filter(Boolean).join(' · ');
+                }
+                this.renderSuggestions(inv);
+                this.showToast('Accepted');
+            })
+            .catch(() => this.showToast('Error accepting suggestion', 'error'));
+    },
+
+    rejectSuggestion(field) {
+        const inv = this.invitees.find(i => i.id === this.detailInviteeId);
+        if (!inv || !inv.pendingSuggestions || !inv.pendingSuggestions[field]) return;
+        Data.rejectSuggestion(this.detailInviteeId, field)
+            .then(() => {
+                delete inv.pendingSuggestions[field];
+                this.renderSuggestions(inv);
+                this.showToast('Rejected');
+            })
+            .catch(() => this.showToast('Error rejecting suggestion', 'error'));
+    },
+
+    acceptAllSuggestions() {
+        const inv = this.invitees.find(i => i.id === this.detailInviteeId);
+        if (!inv || !inv.pendingSuggestions) return;
+        const fields = Object.keys(inv.pendingSuggestions);
+        fields.forEach(f => this.acceptSuggestion(f));
+    },
+
+    rejectAllSuggestions() {
+        const inv = this.invitees.find(i => i.id === this.detailInviteeId);
+        if (!inv || !inv.pendingSuggestions) return;
+        const fields = Object.keys(inv.pendingSuggestions);
+        fields.forEach(f => this.rejectSuggestion(f));
     },
 
     closeDetailModal() {
@@ -1034,10 +1141,15 @@ const App = {
 
     saveDetail() {
         if (!this.detailInviteeId) return;
+        const id = this.detailInviteeId;
         const headshotUrl = document.getElementById('detail-headshot-url').value.trim();
         const bio = document.getElementById('detail-bio').value.trim();
         const excludeFromFacebook = document.getElementById('detail-exclude-facebook').checked;
-        Data.updateInvitee(this.detailInviteeId, { headshotUrl, bio, excludeFromFacebook })
+        const inv = this.invitees.find(i => i.id === id);
+        const pending = (inv && inv.pendingSuggestions) || {};
+        const staleFields = ['headshotUrl', 'bio'].filter(f => pending[f]);
+        Data.updateInvitee(id, { headshotUrl, bio, excludeFromFacebook })
+            .then(() => staleFields.length ? Data.clearSuggestions(id, staleFields) : null)
             .then(() => {
                 this.showToast('Profile saved');
                 this.closeDetailModal();

@@ -78,6 +78,8 @@ const Data = {
             headshotUrl: invitee.headshotUrl || '',
             bio: invitee.bio || '',
             excludeFromFacebook: invitee.excludeFromFacebook || false,
+            pendingSuggestions: invitee.pendingSuggestions || {},
+            lastEnrichmentAt: invitee.lastEnrichmentAt || '',
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -92,6 +94,30 @@ const Data = {
 
     async deleteInvitee(id) {
         return db.collection('invitees').doc(id).delete();
+    },
+
+    async acceptSuggestion(id, field, value) {
+        return db.collection('invitees').doc(id).update({
+            [field]: value,
+            [`pendingSuggestions.${field}`]: firebase.firestore.FieldValue.delete(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    },
+
+    async rejectSuggestion(id, field) {
+        return db.collection('invitees').doc(id).update({
+            [`pendingSuggestions.${field}`]: firebase.firestore.FieldValue.delete(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    },
+
+    async clearSuggestions(id, fields) {
+        if (!fields.length) return;
+        const updates = { updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        for (const f of fields) {
+            updates[`pendingSuggestions.${f}`] = firebase.firestore.FieldValue.delete();
+        }
+        return db.collection('invitees').doc(id).update(updates);
     },
 
     // ── Seed Data ───────────────────────────────────────

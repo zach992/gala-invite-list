@@ -1198,6 +1198,126 @@ tr.editing td {
     accent-color: var(--accent);
 }
 
+/* ── Suggestion dot on row profile button ─────────── */
+.profile-btn {
+    position: relative;
+}
+.suggestion-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--surface);
+}
+.profile-btn.has-suggestions {
+    color: var(--accent);
+}
+
+/* ── Proposed Updates section in detail modal ───────── */
+.detail-suggestions {
+    display: none;
+    padding: 16px;
+    margin: 0 0 16px 0;
+    background: var(--accent-light);
+    border: 1px solid rgba(180, 83, 9, 0.25);
+    border-radius: 8px;
+}
+.suggestions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.suggestions-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-hover);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.suggestions-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    margin-left: 6px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+}
+.suggestions-bulk {
+    display: flex;
+    gap: 6px;
+}
+.proposed-field {
+    padding: 12px 0;
+    border-top: 1px solid rgba(180, 83, 9, 0.15);
+}
+.proposed-field:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+.proposed-field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-hover);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+.proposed-field-values {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.proposed-current,
+.proposed-new {
+    padding: 8px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    min-width: 0;
+}
+.proposed-new {
+    border-color: var(--accent);
+}
+.proposed-tag {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+.proposed-new .proposed-tag {
+    color: var(--accent);
+}
+.proposed-text {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--text);
+    word-wrap: break-word;
+    max-height: 120px;
+    overflow-y: auto;
+}
+.proposed-text em {
+    color: var(--text-muted);
+    font-style: italic;
+}
+.proposed-field-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
 /* ── Loading / Config Warning ────────────────────── */
 .config-warning {
     max-width: 500px;
