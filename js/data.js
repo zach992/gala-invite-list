@@ -71,6 +71,7 @@ const Data = {
             organization: invitee.organization || '',
             status: invitee.status || 'pending',
             seats: invitee.seats || '',
+            tableNumber: invitee.tableNumber || '',
             invitedBy: invitee.invitedBy || '',
             phone: invitee.phone || '',
             email: invitee.email || '',

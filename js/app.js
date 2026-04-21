@@ -1,9 +1,9 @@
 // ── Constants ────────────────────────────────────────
-const FIELD_ORDER = ['name', 'title', 'organization', 'status', 'seats', 'invitedBy', 'phone', 'email', 'notes'];
+const FIELD_ORDER = ['name', 'title', 'organization', 'status', 'seats', 'tableNumber', 'invitedBy', 'phone', 'email', 'notes'];
 const STATUS_ORDER = { pending: 0, invited: 1, confirmed: 2, declined: 3 };
 const HEADER_LABELS = {
     name: 'Name', title: 'Title', organization: 'Organization',
-    status: 'Status', seats: 'Seats', invitedBy: 'Invited By', phone: 'Phone', email: 'Email', notes: 'Notes'
+    status: 'Status', seats: 'Seats', tableNumber: 'Table #', invitedBy: 'Invited By', phone: 'Phone', email: 'Email', notes: 'Notes'
 };
 
 // ── App State ────────────────────────────────────────
@@ -459,7 +459,7 @@ const App = {
         const phantomRow = this.renderPhantomRow();
 
         const visible = this.getVisibleFields();
-        const colWidths = { name: 14, title: 12, organization: 14, status: 8, seats: 4, invitedBy: 11, phone: 9, email: 12, notes: 16 };
+        const colWidths = { name: 14, title: 12, organization: 14, status: 8, seats: 4, tableNumber: 5, invitedBy: 11, phone: 9, email: 12, notes: 16 };
         const actionWidth = 4;
         const totalUsed = visible.reduce((sum, f) => sum + colWidths[f], 0) + actionWidth;
         const scale = 96 / totalUsed;
@@ -1320,6 +1320,16 @@ const App = {
         line-height: 1.6;
         color: #44403c;
     }
+    .fb-footer {
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px solid #e7e5e4;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #78716c;
+        font-weight: 500;
+    }
 </style>
 </head><body>
     <div class="fb-cover">
@@ -1336,7 +1346,17 @@ const App = {
                 const ph = inv.headshotUrl
                     ? '<img class="fb-photo" src="' + this.escapeAttr(inv.headshotUrl) + '" alt="' + this.escapeAttr(inv.name) + '">'
                     : '<div class="fb-photo-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
-                return '<div class="fb-card">' + ph + '<div class="fb-details"><div class="fb-name">' + this.escapeHtml(inv.name) + '</div><div class="fb-title">' + this.escapeHtml(inv.title || '') + '</div><div class="fb-org">' + this.escapeHtml(inv.organization || '') + '</div>' + (inv.bio ? '<div class="fb-bio">' + this.escapeHtml(inv.bio) + '</div>' : '') + '</div></div>';
+                const footerParts = [];
+                if (inv.invitedBy && inv.invitedBy.trim()) {
+                    footerParts.push('Invited by ' + this.escapeHtml(inv.invitedBy.trim()));
+                }
+                if (inv.tableNumber && String(inv.tableNumber).trim()) {
+                    footerParts.push('Table ' + this.escapeHtml(String(inv.tableNumber).trim()));
+                }
+                const footerHtml = footerParts.length
+                    ? '<div class="fb-footer">' + footerParts.join(' &middot; ') + '</div>'
+                    : '';
+                return '<div class="fb-card">' + ph + '<div class="fb-details"><div class="fb-name">' + this.escapeHtml(inv.name) + '</div><div class="fb-title">' + this.escapeHtml(inv.title || '') + '</div><div class="fb-org">' + this.escapeHtml(inv.organization || '') + '</div>' + (inv.bio ? '<div class="fb-bio">' + this.escapeHtml(inv.bio) + '</div>' : '') + footerHtml + '</div></div>';
             }).join('');
             pagesHtml += '<div class="fb-page">' + pairCards + '</div>';
         }
@@ -1359,8 +1379,8 @@ const App = {
             filtered = filtered.filter(inv => this.matchesSearch(inv, q));
         }
 
-        const headers = ['Name', 'Title', 'Organization', 'Status', 'Seats', 'Invited By', 'Phone', 'Email', 'Notes'];
-        const fields = ['name', 'title', 'organization', 'status', 'seats', 'invitedBy', 'phone', 'email', 'notes'];
+        const headers = ['Name', 'Title', 'Organization', 'Status', 'Seats', 'Table #', 'Invited By', 'Phone', 'Email', 'Notes'];
+        const fields = ['name', 'title', 'organization', 'status', 'seats', 'tableNumber', 'invitedBy', 'phone', 'email', 'notes'];
         const csvEscape = (val) => {
             const s = (val || '').toString();
             if (s.includes(',') || s.includes('"') || s.includes('\n')) {
