@@ -1,9 +1,11 @@
 // ── Constants ────────────────────────────────────────
-const FIELD_ORDER = ['name', 'title', 'organization', 'status', 'seats', 'tableNumber', 'invitedBy', 'phone', 'email', 'notes'];
+const FIELD_ORDER = ['name', 'title', 'organization', 'status', 'seats', 'tableNumber', 'invitedBy', 'interviewPriority', 'phone', 'email', 'notes'];
 const STATUS_ORDER = { pending: 0, invited: 1, confirmed: 2, declined: 3 };
+const PRIORITY_ORDER = { high: 0, low: 1, na: 2, '': 3 };
 const HEADER_LABELS = {
     name: 'Name', title: 'Title', organization: 'Organization',
-    status: 'Status', seats: 'Seats', tableNumber: 'Table #', invitedBy: 'Invited By', phone: 'Phone', email: 'Email', notes: 'Notes'
+    status: 'Status', seats: 'Seats', tableNumber: 'Table #', invitedBy: 'Invited By',
+    interviewPriority: 'Interview?', phone: 'Phone', email: 'Email', notes: 'Notes'
 };
 
 // ── App State ────────────────────────────────────────
@@ -448,6 +450,8 @@ const App = {
             let cmp = 0;
             if (this.sortField === 'status') {
                 cmp = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);
+            } else if (this.sortField === 'interviewPriority') {
+                cmp = (PRIORITY_ORDER[a.interviewPriority || ''] ?? 99) - (PRIORITY_ORDER[b.interviewPriority || ''] ?? 99);
             } else {
                 cmp = (a[this.sortField] || '').localeCompare(b[this.sortField] || '');
             }
@@ -459,7 +463,7 @@ const App = {
         const phantomRow = this.renderPhantomRow();
 
         const visible = this.getVisibleFields();
-        const colWidths = { name: 14, title: 12, organization: 14, status: 8, seats: 4, tableNumber: 5, invitedBy: 11, phone: 9, email: 12, notes: 16 };
+        const colWidths = { name: 14, title: 12, organization: 14, status: 8, seats: 4, tableNumber: 5, invitedBy: 11, interviewPriority: 9, phone: 9, email: 12, notes: 16 };
         const actionWidth = 4;
         const totalUsed = visible.reduce((sum, f) => sum + colWidths[f], 0) + actionWidth;
         const scale = 96 / totalUsed;
@@ -516,6 +520,10 @@ const App = {
                     <span class="status-badge status-${inv.status}">${this.formatStatus(inv.status)}</span>
                 </td>`;
             }
+            if (field === 'interviewPriority') {
+                const p = inv.interviewPriority || '';
+                return `<td data-field="interviewPriority" data-original="${this.escapeAttr(p)}" title="${this.escapeAttr(this.formatPriority(p))}" onclick="App.editCell(this)">${this.priorityBadgeHtml(p)}</td>`;
+            }
             return `<td data-field="${field}" data-original="${this.escapeAttr(inv[field])}" title="${this.escapeAttr(inv[field] || '')}" onclick="App.editCell(this)"${extraClass}>${this.cellDisplay(inv[field], field)}</td>`;
         }).join('');
         return `
@@ -550,6 +558,8 @@ const App = {
             if (val) {
                 if (field === 'status') {
                     display = `<span class="status-badge status-${val}">${this.formatStatus(val)}</span>`;
+                } else if (field === 'interviewPriority') {
+                    display = this.priorityBadgeHtml(val);
                 } else {
                     display = this.escapeHtml(val);
                 }
@@ -589,6 +599,12 @@ const App = {
         // Status field: custom badge picker
         if (field === 'status') {
             this.openStatusPicker(cell, row, original, isPhantom);
+            return;
+        }
+
+        // Interview priority: custom badge picker
+        if (field === 'interviewPriority') {
+            this.openPriorityPicker(cell, row, original, isPhantom);
             return;
         }
 
@@ -721,6 +737,105 @@ const App = {
         });
     },
 
+    // ── Priority (Interview?) Picker ─────────────────
+    priorityBadgeHtml(val) {
+        const v = val || '';
+        if (!v) return '';
+        return `<span class="priority-badge priority-${v}">${this.formatPriority(v)}</span>`;
+    },
+
+    formatPriority(val) {
+        const labels = { high: 'High Priority', low: 'Low Priority', na: 'N/A' };
+        return labels[val] || '';
+    },
+
+    openPriorityPicker(cell, row, currentVal, isPhantom) {
+        const options = ['high', 'low', 'na'];
+        const select = document.createElement('select');
+        select.className = 'inline-edit-input status-select';
+
+        // Leading blank option so users can clear back to empty
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = '—';
+        if (!currentVal) blank.selected = true;
+        select.appendChild(blank);
+
+        options.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = this.formatPriority(v);
+            if (v === currentVal) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        cell.textContent = '';
+        cell.appendChild(select);
+        select.focus();
+        select.showPicker?.();
+
+        const commit = () => {
+            const val = select.value;
+            if (isPhantom) {
+                this.pendingNewRow['interviewPriority'] = val;
+                this.restorePhantomCellDisplay(cell);
+            } else {
+                cell.dataset.original = val;
+                this.restoreCellDisplay(cell);
+                const id = row.dataset.id;
+                const item = this.invitees.find(i => i.id === id);
+                if (item && (item.interviewPriority || '') !== val) {
+                    const oldVal = item.interviewPriority || '';
+                    item.interviewPriority = val;
+                    Data.updateInvitee(id, { interviewPriority: val })
+                        .then(() => this.showToast('Updated'))
+                        .catch(err => {
+                            item.interviewPriority = oldVal;
+                            this.showToast('Error saving', 'error');
+                            this.renderTable();
+                        });
+                }
+            }
+            if (!row.querySelector('.inline-edit-input') && !row.querySelector('.status-picker')) {
+                row.classList.remove('editing');
+                this.clearEditingFlag();
+            }
+        };
+
+        select.addEventListener('change', commit);
+
+        select.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (cell.contains(select)) commit();
+            }, 50);
+        });
+
+        select.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                commit();
+                this.navigateCell(row, 'interviewPriority', e.shiftKey ? -1 : 1);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                commit();
+                if (isPhantom) {
+                    this.commitNewRow(row);
+                } else {
+                    this.navigateNextRowSameColumn(row, 'interviewPriority');
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                if (isPhantom) {
+                    this.restorePhantomCellDisplay(cell);
+                } else {
+                    this.restoreCellDisplay(cell);
+                }
+                row.classList.remove('editing');
+                this.clearEditingFlag();
+            }
+        });
+    },
+
     handleCellKeydown(e, cell, row) {
         const field = cell.dataset.field;
         const isPhantom = row.dataset.phantom === 'true';
@@ -805,6 +920,8 @@ const App = {
         const original = cell.dataset.original || '';
         if (field === 'status') {
             cell.innerHTML = `<span class="status-badge status-${original}">${this.formatStatus(original)}</span>`;
+        } else if (field === 'interviewPriority') {
+            cell.innerHTML = this.priorityBadgeHtml(original);
         } else if (original) {
             cell.textContent = original;
         } else {
@@ -818,6 +935,8 @@ const App = {
         if (val) {
             if (field === 'status') {
                 cell.innerHTML = `<span class="status-badge status-${val}">${this.formatStatus(val)}</span>`;
+            } else if (field === 'interviewPriority') {
+                cell.innerHTML = this.priorityBadgeHtml(val);
             } else {
                 cell.textContent = val;
             }
@@ -1330,6 +1449,26 @@ const App = {
         color: #78716c;
         font-weight: 500;
     }
+    .fb-interview {
+        display: inline-block;
+        margin-bottom: 10px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .fb-interview.fb-interview-high {
+        background: #f9c7bb;
+        color: #a0381c;
+        border: 1px solid rgba(160, 56, 28, 0.35);
+    }
+    .fb-interview.fb-interview-low {
+        background: #f6e3a6;
+        color: #7a5614;
+        border: 1px solid rgba(122, 86, 20, 0.3);
+    }
 </style>
 </head><body>
     <div class="fb-cover">
@@ -1356,7 +1495,13 @@ const App = {
                 const footerHtml = footerParts.length
                     ? '<div class="fb-footer">' + footerParts.join(' &middot; ') + '</div>'
                     : '';
-                return '<div class="fb-card">' + ph + '<div class="fb-details"><div class="fb-name">' + this.escapeHtml(inv.name) + '</div><div class="fb-title">' + this.escapeHtml(inv.title || '') + '</div><div class="fb-org">' + this.escapeHtml(inv.organization || '') + '</div>' + (inv.bio ? '<div class="fb-bio">' + this.escapeHtml(inv.bio) + '</div>' : '') + footerHtml + '</div></div>';
+                let interviewHtml = '';
+                if (inv.interviewPriority === 'high') {
+                    interviewHtml = '<div class="fb-interview fb-interview-high">Interview &middot; High Priority</div>';
+                } else if (inv.interviewPriority === 'low') {
+                    interviewHtml = '<div class="fb-interview fb-interview-low">Interview &middot; Low Priority</div>';
+                }
+                return '<div class="fb-card">' + ph + '<div class="fb-details">' + interviewHtml + '<div class="fb-name">' + this.escapeHtml(inv.name) + '</div><div class="fb-title">' + this.escapeHtml(inv.title || '') + '</div><div class="fb-org">' + this.escapeHtml(inv.organization || '') + '</div>' + (inv.bio ? '<div class="fb-bio">' + this.escapeHtml(inv.bio) + '</div>' : '') + footerHtml + '</div></div>';
             }).join('');
             pagesHtml += '<div class="fb-page">' + pairCards + '</div>';
         }
@@ -1379,8 +1524,8 @@ const App = {
             filtered = filtered.filter(inv => this.matchesSearch(inv, q));
         }
 
-        const headers = ['Name', 'Title', 'Organization', 'Status', 'Seats', 'Table #', 'Invited By', 'Phone', 'Email', 'Notes'];
-        const fields = ['name', 'title', 'organization', 'status', 'seats', 'tableNumber', 'invitedBy', 'phone', 'email', 'notes'];
+        const headers = ['Name', 'Title', 'Organization', 'Status', 'Seats', 'Table #', 'Invited By', 'Interview?', 'Phone', 'Email', 'Notes'];
+        const fields = ['name', 'title', 'organization', 'status', 'seats', 'tableNumber', 'invitedBy', 'interviewPriority', 'phone', 'email', 'notes'];
         const csvEscape = (val) => {
             const s = (val || '').toString();
             if (s.includes(',') || s.includes('"') || s.includes('\n')) {

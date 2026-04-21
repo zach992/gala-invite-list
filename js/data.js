@@ -73,6 +73,7 @@ const Data = {
             seats: invitee.seats || '',
             tableNumber: invitee.tableNumber || '',
             invitedBy: invitee.invitedBy || '',
+            interviewPriority: invitee.interviewPriority || '',
             phone: invitee.phone || '',
             email: invitee.email || '',
             notes: invitee.notes || '',

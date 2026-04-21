@@ -13,7 +13,7 @@ Vanilla JS, HTML, CSS — Firebase Firestore (real-time sync), no build step
 
 ## Data Model
 **Events:** name, date, location, address, hostedBy, dressCode, rsvpDeadline, eventUrl, draftEmail, notes, order
-**Invitees:** eventId, name, title, organization, status (pending/invited/confirmed/declined), seats, tableNumber, invitedBy, phone, email, notes
+**Invitees:** eventId, name, title, organization, status (pending/invited/confirmed/declined), seats, tableNumber, invitedBy, interviewPriority (high/low/na), phone, email, notes
 
 ## Key Patterns
 - Firestore REST API (`https://firestore.googleapis.com/v1/projects/gala-invite-list-2026/...`) can be used to batch-read/write data from CLI

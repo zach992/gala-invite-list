@@ -40,6 +40,17 @@
     --status-declined-bg: #f2b8be;
     --status-declined-text: #993344;
     --status-declined-border: rgba(153, 51, 68, 0.25);
+
+    /* Interview priority colors */
+    --priority-high-bg: #f9c7bb;
+    --priority-high-text: #a0381c;
+    --priority-high-border: rgba(160, 56, 28, 0.3);
+    --priority-low-bg: #f6e3a6;
+    --priority-low-text: #7a5614;
+    --priority-low-border: rgba(122, 86, 20, 0.25);
+    --priority-na-bg: #e5e3df;
+    --priority-na-text: #8a8480;
+    --priority-na-border: rgba(138, 132, 128, 0.25);
 }
 
 body {
@@ -812,6 +823,22 @@ tr.editing td {
 .status-invited { background: var(--status-invited-bg); color: var(--status-invited-text); border-color: var(--status-invited-border); }
 .status-confirmed { background: var(--status-confirmed-bg); color: var(--status-confirmed-text); border-color: var(--status-confirmed-border); }
 .status-declined { background: var(--status-declined-bg); color: var(--status-declined-text); border-color: var(--status-declined-border); }
+
+.priority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+.priority-high { background: var(--priority-high-bg); color: var(--priority-high-text); border-color: var(--priority-high-border); }
+.priority-low { background: var(--priority-low-bg); color: var(--priority-low-text); border-color: var(--priority-low-border); }
+.priority-na { background: var(--priority-na-bg); color: var(--priority-na-text); border-color: var(--priority-na-border); }
 
 /* ── Status Select (native dropdown) ──────────── */
 .status-select {
